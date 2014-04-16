@@ -218,7 +218,7 @@ int main(int argc, char *argv[])
     // Get the vogl src directory and add it to our defines.
     args.defs += " ";
     args.defs += vogl_proj_dir;
-    args.defs += "/src";
+    args.defs += "/vogl";
 
     unsigned int platform = args.flags & (F_I386 | F_AMD64);
     while (platform)
