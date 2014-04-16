@@ -8,7 +8,7 @@ find_package(OpenGL REQUIRED)
 
 # Add the gltest/include directory
 include_directories(
-    ${SRC_DIR}/gltests/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
     )
 
 #
@@ -25,5 +25,4 @@ add_subdirectory(fixedfunc-multitexcoord-2d)
 add_subdirectory(indexed-geometry)
 add_subdirectory(benchmark_sphere)
 add_subdirectory(msaa_depthstencil)
-
 
