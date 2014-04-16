@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# exit on any script line that fails
+set -o errexit
+# bail on any unitialized variable reads
+set -o nounset
+
 # Check if we have any arguments.
 if [ -z "$1" ]; then
   echo "Usage: build_chroot.sh [--i386] [--amd64]";
@@ -94,9 +99,31 @@ if [[ "$REPLY" != [Yy] ]]; then
   exit 1
 fi
 
+# http://stackoverflow.com/questions/64786/error-handling-in-bash
+function cleanup()
+{
+    echo -e "\nenv is:\n$(env)\n"
+
+    tput setaf 3
+    echo "ERROR: $0 just hit error handler."
+    echo "  BASH_COMMAND is \"${BASH_COMMAND}\""
+    echo "  BASH_VERSION is $BASH_VERSION"
+    echo "  pwd is \"$(pwd)\""
+    echo "  PATH is \"$PATH\""
+    echo ""
+    tput sgr0
+}
+
+# from "man bash":
+#   If a sigspec is EXIT (0) the command arg is executed on exit from the shell.
+trap cleanup EXIT
+
 for var in "$@"; do
   build_chroot "$var"
 done
 
 echo -e "\n${Color_On}Done...${Color_Off}"
-exit 1
+
+# Clear our exit trap handler
+trap - EXIT
+
