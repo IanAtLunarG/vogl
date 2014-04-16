@@ -1,45 +1,34 @@
-vogl
+vogl_chroot
 =============
 
-## NOTE ##
+## Enlist ##
 
-This, (the original Vogl source repository), is now deprecated. Within
-a couple of weeks, the source code history here will be replaced with
-the new source-code history at: https://github.com/ValveSoftware/vogl_src
-
-So, for now, please push any code changes to the "vogl_src" repository
-instead of to "vogl" to ensure the changes do not get lost in the
-transition.
-
-However, for Wiki, Issues, etc. the web-pages of the "vogl" repository
-are still correct (and those at "vogl_src" are just empty and should
-remain that way).
-
-
-## Warning ##
-
-This project is alpha^2 right now. If you are up for suffering through a bit of pain with early releases, please continue on - we'd love to have your help...
+```
+git clone https://bitbucket.org/raddebugger/vogl_chroot.git  
+cd vogl_chroot  
+git clone https://github.com/ValveSoftware/vogl.git  
+```
 
 ## Build ##
 
 To build the vogl chroots (uses schroot), do the following:
 
-    vogl/bin/chroot_build.sh --i386 --amd64
+    ./bin/chroot_build.sh --i386 --amd64
 
 You should now be ready to build in your chroots. Something like any of these:
 
-    vogl/bin/mkvogl.sh --release --amd64
-    vogl/bin/mkvogl.sh --debug --amd64 --i386 --clang34 --verbose
-    vogl/bin/mkvogl.sh --release --amd64 --i386 --gcc48 --CRNLIB_ENABLE_ASSERTS
+    ./bin/mkvogl.sh --release --amd64
+    ./bin/mkvogl.sh --debug --amd64 --i386 --clang34 --verbose
+    ./bin/mkvogl.sh --release --amd64 --i386 --gcc48 --CRNLIB_ENABLE_ASSERTS
 
-Note that you do _not_ have to use the chroots or mkvogl.sh to build. You could do your own cmake (cmake vogl/src) and go from there. It's up to you to get the dependencies correct though. Look at vogl/bin/chroot_configure.sh to see how the chroots are set up. The source for mkvogl is in vogl/bin/src/mkvogl.cpp - it's just a simple cpp wrapper around cmake.
+Note that you do _not_ have to use the chroots or mkvogl.sh to build. You could do your own cmake (cmake vogl/src) and go from there. It's up to you to get the dependencies correct though. Look at vogl/bin/chroot_configure.sh to see how the chroots are set up. The source for mkvogl is in ./bin/src/mkvogl.cpp - it's just a simple cpp wrapper around cmake.
 
 If you do use the chroots, do not build from within an encrypted home folder, as files in an encrypted home folder will not be visible from within the chroot, causing the build script to fail.
 
 ## Capturing ##
 
-    vogl/bin/steamlauncher.sh --gameid vogl/vogl_build/bin/glxspheres32
-    vogl/bin/steamlauncher.sh --gameid vogl/vogl_build/bin/glxspheres64 --amd64
+    ./bin/steamlauncher.sh --gameid vogl/vogl_build/bin/glxspheres32
+    ./bin/steamlauncher.sh --gameid vogl/vogl_build/bin/glxspheres64 --amd64
 
 You should now have something like the following in your temp directory:
 
@@ -61,41 +50,11 @@ The directory structure for vogl currently looks like this:
             bin/
                 chroot_build.sh ; script to build/rebuild chroots
                 chroot_configure.sh ; script to build libs to chroots (used by chroot_build.sh)
-                gligen_run.sh ; run vogl_build/bin64/gligen.sh (put in glspec)
-                gligen_copy_inc_files.sh ; copy glspec/*.inc
                 set_compiler.sh ; switch chroot default compiler
             external/ ; external source (libunwind, etc.)
-            glspec/
             src/ ; vogl source
             vogl_build/
                 bin/ ; destination for binaries
             vogl_extbuild/
                 i386/   ; external projects untar'd & built here
                 x86_64/ ;
-
-## QtCreator tagging and building ##
-
-  See qtcreator/qtcreator.md file: [qtcreator.md](qtcreator/qtcreator.md)
-
-## Vogl Dev List ##
-
-    http://lists.voglproj.com/listinfo.cgi/dev-voglproj.com
-
-## Useful Links ##
-
-Vogl Wiki
-
-* https://github.com/ValveSoftware/vogl/wiki
-
-OpenGL documentation/references
-
-* 4.x: http://www.opengl.org/sdk/docs/man/
-* 3.3: http://www.opengl.org/sdk/docs/man3/
-* 2.1: http://www.opengl.org/sdk/docs/man2/
-
-Specifications:
-
-* 4.0: http://www.opengl.org/registry/doc/glspec40.core.20100311.pdf
-* 3.3: http://www.opengl.org/registry/doc/glspec33.core.20100311.withchanges.pdf
-* 2.1: http://www.opengl.org/documentation/specs/version2.1/glspec21.pdf
-
