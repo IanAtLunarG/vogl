@@ -152,6 +152,9 @@ if [[ -n "$DO_PACKAGES" ]]; then
     apt_get_install -y libxi-dev
     apt_get_install -y libxxf86vm-dev
 
+    # Install latex2man for libunwind.
+    apt_get_install -y texlive-extra-utils
+
     # Install a toilet (banners in console)
     apt_get_install -y toilet
 
