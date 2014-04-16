@@ -1,0 +1,253 @@
+// tests.json
+//
+// Can validate via: http://jsonlint.com/
+//
+// comparison_sum_threshhold: sum comparison threshold (0=CRC/exact matching, >0=sum hashing with threshold)
+// comparison_frames_to_skip: # of frames to skip in CRC comparison
+
+{
+
+"g-truc1": {
+    "window_width": 640,
+    "window_height": 480,
+    "comparison_sum_threshhold": 0,
+    "comparison_frames_to_skip": 0,
+    "trim_frame_start": 100,
+    "trim_frame_count": 100,
+    "trace_files": [
+        "traces/gl-320-buffer-update32.trace",
+        "traces/gl-320-draw-base-vertex32.trace",
+        "traces/gl-320-draw-image-space32.trace",
+        "traces/gl-320-draw-instanced32.trace",
+        "traces/gl-320-draw-multiple32.trace",
+        "traces/gl-320-draw-without-vertex-attrib32.trace",
+        "traces/gl-320-fbo32.trace",
+        "traces/gl-320-fbo-blit32.trace",
+        "traces/gl-320-fbo-depth32.trace",
+        "traces/gl-320-fbo-depth-multisample32.trace",
+        "traces/gl-320-fbo-layered32.trace"
+    ]
+},
+
+"g-truc2": {
+    "window_width": 640,
+    "window_height": 480,
+    "comparison_sum_threshhold": 0,
+    "comparison_frames_to_skip": 0,
+    "trim_frame_start": 1,
+    "trim_frame_count": 75,
+    "trace_files": [
+        "traces/gl-320-fbo-rtt32.trace",
+        "traces/gl-320-fbo-rtt-texture-array32.trace",
+        "traces/gl-320-glsl-builtin-blocks32.trace",
+        "traces/gl-320-glsl-discard32.trace",
+        "traces/gl-320-glsl-precision32.trace",
+        "traces/gl-320-primitive-front-face32.trace",
+        "traces/gl-320-primitive-point32.trace",
+        "traces/gl-320-primitive-shading32.trace",
+        "traces/gl-320-primitive-sprite32.trace",
+        "traces/gl-320-query-conditional32.trace",
+        "traces/gl-320-query-occlusion32.trace",
+        "traces/gl-320-sync32.trace",
+        "traces/gl-320-test-scissor32.trace",
+        "traces/gl-320-texture-2d32.trace",
+        "traces/gl-320-texture-3d32.trace",
+        "traces/gl-320-texture-buffer32.trace",
+        "traces/gl-320-texture-compressed-ext32.trace",
+        "traces/gl-320-texture-cube32.trace",
+        "traces/gl-320-texture-fetch32.trace",
+        "traces/gl-320-texture-format32.trace",
+        "traces/gl-320-texture-integer32.trace",
+        "traces/gl-320-texture-offset32.trace",
+        "traces/gl-320-texture-pixel-store32.trace",
+        "traces/gl-320-texture-streaming32.trace",
+        "traces/gl-320-transform-feedback-interleaved32.trace",
+        "traces/gl-320-transform-feedback-separated32.trace",
+        "traces/gl-330-blend-index32.trace",
+        "traces/gl-330-blend-rtt32.trace",
+        "traces/gl-330-buffer-type32.trace",
+        "traces/gl-330-draw-instanced-array32.trace",
+        "traces/gl-330-fbo-multisample-explicit-nv32.trace",
+        "traces/gl-330-query-timer32.trace",
+        "traces/gl-330-sampler-anisotropy-ext32.trace",
+        "traces/gl-330-sampler-filter32.trace",
+        "traces/gl-330-sampler-object32.trace",
+        "traces/gl-330-texture-integer-rgb10a2ui32.trace",
+        "traces/gl-330-texture-rect32.trace",
+        "traces/gl-330-texture-swizzle32.trace"
+    ]
+},
+
+"g-truc3": {
+    "window_width": 640,
+    "window_height": 480,
+    "comparison_sum_threshhold": 0,
+    "comparison_frames_to_skip": 0,
+    "trim_frame_start": 200,
+    "trim_frame_count": 200,
+    "trace_files": [
+        "traces/gl-300-fbo-multisample32.trace",
+        "traces/gl-300-test-alpha32.trace",
+        "traces/gl-320-buffer-uniform32.trace",
+        "traces/gl-320-buffer-uniform-shared32.trace"
+    ]
+},
+
+"gl-320-fbo-shadow32": {
+    "window_width": 640,
+    "window_height": 480,
+    "comparison_sum_threshhold": 2048,
+    "comparison_frames_to_skip": 0,
+    "trim_frame_start": 1,
+    "trim_frame_count": 75,
+    "trace_files": [
+        "traces/gl-320-fbo-shadow32.trace"
+    ]
+},
+
+"gl-320-fbo-srgb32": {
+    "window_width": 640,
+    "window_height": 512,
+    "comparison_sum_threshhold": 0,
+    "comparison_frames_to_skip": 2,
+    "trim_frame_start": 2,
+    "trim_frame_count": 75,
+    "trace_files": [
+        "traces/gl-320-fbo-srgb32.trace"
+    ]
+},
+
+"gl-330-sampler-wrap32": {
+    "window_width": 1024,
+    "window_height": 768,
+    "comparison_sum_threshhold": 0,
+    "comparison_frames_to_skip": 0,
+    "trim_frame_start": 1,
+    "trim_frame_count": 75,
+    "trace_files": [
+        "traces/gl-330-sampler-wrap32.trace"
+    ]
+},
+
+"MetroLL": {
+    "window_width": 1024,
+    "window_height": 768,
+    "comparison_sum_threshhold": 0,
+    "comparison_frames_to_skip": 0,
+    "trim_frame_start": 1500,
+    "trim_frame_count": 250,
+    "trace_files": [
+        "traces/MetroLL.trace"
+    ]
+},
+
+"q3_full": {
+    "window_width": 1024,
+    "window_height": 768,
+    "comparison_sum_threshhold": 2048,
+    "comparison_frames_to_skip": 0,
+    "trim_frame_start": 1500,
+    "trim_frame_count": 250,
+    "trace_files": [
+        "traces/q3_full_trace.bin"
+    ]
+},
+
+"p1_full": {
+    "window_width": 1024,
+    "window_height": 768,
+    "comparison_sum_threshhold": 2048,
+    "comparison_frames_to_skip": 0,
+    "trim_frame_start": 500,
+    "trim_frame_count": 1000,
+    "trace_files": [
+        "traces/p1_full.trace"
+    ]
+},
+
+"glxspheres32": {
+    "window_width": 1240,
+    "window_height": 900,
+    "comparison_sum_threshhold": 2048,
+    "comparison_frames_to_skip": 0,
+    "trim_frame_start": 500,
+    "trim_frame_count": 250,
+    "trace_files": [
+        "traces/glxspheres32.trace"
+    ]
+},
+
+"heaven_x86": {
+    "window_width": 1280,
+    "window_height": 1024,
+    "comparison_sum_threshhold": 0,
+    "comparison_frames_to_skip": 0,
+    "trim_frame_start": 500,
+    "trim_frame_count": 250,
+    "trace_files": [
+        "traces/heaven_x86.trace"
+    ]
+},
+
+"dota_linux": {
+    "window_width": 1280,
+    "window_height": 800,
+    "comparison_sum_threshhold": 0,
+    "comparison_frames_to_skip": 3,
+    "trim_frame_start": 22000,
+    "trim_frame_count": 250,
+    "trace_files": [
+        "traces/dota_linux.trace"
+    ]
+},
+
+"tf2": {
+    "window_width": 1280,
+    "window_height": 800,
+    "comparison_sum_threshhold": 2048,
+    "comparison_frames_to_skip": 0,
+    "trim_frame_start": 2600,
+    "trim_frame_count": 250,
+    "trace_files": [
+        "traces/tf2.trace"
+    ]
+},
+
+"quake2": {
+    "window_width": 1600,
+    "window_height": 1200,
+    "comparison_sum_threshhold": 2048,
+    "comparison_frames_to_skip": 0,
+    "trim_frame_start": 1000,
+    "trim_frame_count": 250,
+    "trace_files": [
+        "traces/quake2.trace"
+    ]
+},
+
+"doom3": {
+    "window_width": 1600,
+    "window_height": 1200,
+    "comparison_sum_threshhold": 4096,
+    "comparison_frames_to_skip": 0,
+    "trim_frame_start": 4000,
+    "trim_frame_count": 500,
+    "trace_files": [
+        "traces/doom3.trace"
+    ]
+},
+
+"darwinia": {
+    "window_width": 800,
+    "window_height": 600,
+    "comparison_sum_threshhold": 4096,
+    "comparison_frames_to_skip": 0,
+    "trim_frame_start": 100,
+    "trim_frame_count": 100,
+    "trace_files": [
+        "traces/darwinia_trace.bin"
+    ]
+}
+
+}
+
