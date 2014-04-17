@@ -40,7 +40,7 @@
 #define F_CLEAN           0x00000010
 #define F_RELEASE         0x00000020
 #define F_DEBUG           0x00000040
-#define F_CLANG33         0x00000100
+#define F_SCANBUILD       0x00000100
 #define F_CLANG34         0x00000200
 #define F_GCC48           0x00000400
 #define F_GCC             0x00000800
@@ -53,6 +53,35 @@ struct arguments_t
     unsigned int flags;
     std::string defs;
 };
+
+//----------------------------------------------------------------------------------------------------------------------
+// Printf style formatting for std::string.
+//----------------------------------------------------------------------------------------------------------------------
+std::string string_format(const char *fmt, ...)
+{
+    std::string str;
+    int size = 256;
+
+    for (;;)
+    {
+        va_list ap;
+
+        va_start(ap, fmt);
+        str.resize(size);
+        int n = vsnprintf((char *)str.c_str(), size, fmt, ap);
+        va_end(ap);
+
+        if ((n > -1) && (n < size))
+        {
+            str.resize(n);
+            return str;
+        }
+
+        size = (n > -1) ? (n + 1) : (size * 2);
+    }
+
+    return str;
+}
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state)
 {
@@ -93,8 +122,8 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
     case 'r': arguments->flags |= F_RELEASE; break;
     case 'g': arguments->flags |= F_GCC; break;
     case '8': arguments->flags |= F_GCC48; break;
-    case 'l': arguments->flags |= F_CLANG33; break;
     case 'n': arguments->flags |= F_CLANG34; break;
+    case 's': arguments->flags |= F_SCANBUILD | F_USEMAKE | F_CLANG34 | F_CLEAN; break;
     case 'y': g_dryrun = true; break;
         break;
     }
@@ -145,14 +174,14 @@ int main(int argc, char *argv[])
 
         { "gcc46",                      'g', 0, 0, "Use gcc 4.6 to build.", 3 },
         { "gcc48",                      '8', 0, 0, "Use gcc 4.8 to build.", 3 },
-        { "clang33",                    'l', 0, 0, "Use clang 3.3 to build.", 3 },
         { "clang34",                    'n', 0, 0, "Use clang 3.4 to build.", 3 },
+        { "scan-build",                 's', 0, 0, "Use Clang Static Analyzer (scan-build) to build.", 3 },
 
         { "CLANG_ANALYZE",              -1,  0, 0, "Do clang analyze build (will not link).", 100 },
-        { "HAS_UPDATED_LIBUNWIND",   -1,  0, 0, "Build libbacktrace with HAS_UPDATED_LIBUNWIND.", 100 },
-        { "VOGLTEST_LOAD_LIBVOGLTRACE",   -1,  0, 0, "Don't implicitly link against libgl.so", 100 },
+        { "HAS_UPDATED_LIBUNWIND",      -1,  0, 0, "Build libbacktrace with HAS_UPDATED_LIBUNWIND.", 100 },
+        { "VOGLTEST_LOAD_LIBVOGLTRACE", -1,  0, 0, "Don't implicitly link against libgl.so", 100 },
         { "VOGLTRACE_NO_PUBLIC_EXPORTS", -1,  0, 0, "Don't define public GL exports in libvogltrace.so.", 100 },
-        { "VOGL_ENABLE_ASSERTS",      -1,  0, 0, "Enable assertions in voglcore builds (including release).", 100 },
+        { "VOGL_ENABLE_ASSERTS",        -1,  0, 0, "Enable assertions in voglcore builds (including release).", 100 },
         { "CLANG_EVERYTHING",           -1,  0, 0, "Do clang build with -Weverything.", 100 },
         { "USE_TELEMETRY",              -1,  0, 0, "Build with Telemetry.", 100 },
         { "WITH_ASAN",                  -1,  0, 0, "Build with Clang address sanitizer.", 100 },
@@ -196,10 +225,13 @@ int main(int argc, char *argv[])
     if (schroot_user)
     {
         struct utsname uts;
+
         if(uname(&uts))
             errorf("ERROR: uname failed.\n");
+
         unsigned int plat_flag = !strcmp(uts.machine, "x86_64") ? F_AMD64 : F_I386;
         args.flags |= plat_flag;
+
         if ((args.flags & (F_AMD64 | F_I386)) != plat_flag)
             errorf("ERROR: Can't build this arch in this %s chroot.\n", uts.machine);
     }
@@ -253,8 +285,7 @@ int main(int argc, char *argv[])
             printf("\033[0;93m %s\033[0m\n", defines.c_str());
 
             // Get our build directory.
-            char build_dir[PATH_MAX];
-            snprintf(build_dir, sizeof(build_dir), "%s/vogl_build/%s/%s", vogl_proj_dir, dirname, flavor_str);
+            std::string build_dir = string_format("%s/vogl_build/%s/%s", vogl_proj_dir, dirname, flavor_str);
 
             // If we are building clean, remove all the files in our build directory.
             if (args.flags & (F_CLEAN | F_CLEANONLY) )
@@ -273,55 +304,46 @@ int main(int argc, char *argv[])
             }
 
             // Make sure our build dir exists.
-            systemf("exec mkdir -p %s", build_dir);
+            systemf("exec mkdir -p %s", build_dir.c_str());
 
             if (!g_dryrun)
             {
                 // Cd to build directory.
-                int ret = chdir(build_dir);
+                int ret = chdir(build_dir.c_str());
                 if (ret != 0)
-                    errorf("ERROR: chdir(%s) failed: %d\n", build_dir, ret);
+                    errorf("ERROR: chdir(%s) failed: %d\n", build_dir.c_str(), ret);
             }
 
             // Check if we are in a schroot. If so, get commands to switch to chroot before executing makes.
-            char schroot_prefix[PATH_MAX];
-            schroot_prefix[0] = 0;
+            std::string schroot_prefix;
             if (!schroot_user)
             {
                 // Will be something like: schroot -c prefix_amd64 -d /build/dir/is/here/bin64/Debug -- 
-                snprintf(schroot_prefix, sizeof(schroot_prefix), "schroot -c %s -d \"%s\" -- ", schroot_name[platind], build_dir);
-                schroot_prefix[sizeof(schroot_prefix) - 1] = 0;
+                schroot_prefix = string_format("schroot -c %s -d \"%s\" -- ", schroot_name[platind], build_dir.c_str());
             }
 
-            char set_compiler[PATH_MAX];
-            const char *set_compiler_flag = " -q";
+            std::string set_compiler = string_format("%s/bin/set_compiler.sh", vogl_proj_dir);
 
-            if (args.flags & F_CLANG34)
-                set_compiler_flag = " -c";
-            else if (args.flags & F_CLANG33)
-                set_compiler_flag = "";
-            else if (args.flags & F_GCC48)
-                set_compiler_flag = " -8";
+            if (args.flags & F_GCC48)
+                set_compiler += " -8";
             else if (args.flags & F_GCC)
-                set_compiler_flag = " -g";
+                set_compiler += " -g";
+            else
+                set_compiler += " -q";
 
-            snprintf(set_compiler, sizeof(set_compiler), "%s/bin/set_compiler.sh", vogl_proj_dir);
-            systemf("exec %s%s%s", schroot_prefix, set_compiler, set_compiler_flag);
+            std::string scan_build = (args.flags & F_SCANBUILD) ? "scan-build " : "";
+            systemf("exec %s%s", schroot_prefix.c_str(), set_compiler.c_str());
 
             // Always do the cmake command. Seems fast, and it rebuilds stuff if its changed.
-            systemf("exec %scmake %s", schroot_prefix, defines.c_str());
+            systemf("exec %s%scmake %s", schroot_prefix.c_str(), scan_build.c_str(), defines.c_str());
 
             // Check if we are using Ninja or regular makefiles.
-            char buildfile[PATH_MAX];
-
-            snprintf(buildfile, sizeof(buildfile), "%s/%s", build_dir, "build.ninja");
-            buildfile[sizeof(buildfile) - 1] = 0;
-
-            bool use_ninja = (access(buildfile, F_OK) == 0);
+            std::string buildfile = build_dir + "/build.ninja";
+            bool use_ninja = (access(buildfile.c_str(), F_OK) == 0);
             static const char *make_command = use_ninja ? "ninja" : "make -j 8";
             static const char *verbose_arg = use_ninja ? " -v" : " VERBOSE=1";
 
-            systemf("exec %s%s%s", schroot_prefix, make_command, (args.flags & F_VERBOSE) ? verbose_arg : "");
+            systemf("exec %s%s%s%s", schroot_prefix.c_str(), scan_build.c_str(), make_command, (args.flags & F_VERBOSE) ? verbose_arg : "");
         }
     }
 

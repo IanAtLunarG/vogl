@@ -26,7 +26,7 @@ if [ $schroot_list ]; then
     if [[ "$REPLY" != [Yy] ]]; then
         echo -e "Cancelled...\n"
         exit 1
-  fi
+    fi
 fi
 
 build_chroot()

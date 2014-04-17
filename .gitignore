@@ -1,10 +1,14 @@
+*~
 vogl/*
-
-bin/x86_64/mkvogl
-bin/x86_64/steamlauncher
-bin/i386/mkvogl
-bin/i386/steamlauncher
 vogl_build/*
 vogl_extbuild/*
 
-*~
+bin/x86_64/mkvogl
+bin/x86_64/steamlauncher
+bin/x86_64/clang-format
+bin/i386/mkvogl
+bin/i386/steamlauncher
+bin/i386/clang-format
+
+tests/x86_64/run_tests
+
