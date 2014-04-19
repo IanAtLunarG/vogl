@@ -326,6 +326,8 @@ int main(int argc, char *argv[])
                 set_compiler += " -8";
             else if (args.flags & F_GCC)
                 set_compiler += " -g";
+            else if (args.flags & F_CLANG34)
+                set_compiler += " -c";
             else
                 set_compiler += " -q";
 
