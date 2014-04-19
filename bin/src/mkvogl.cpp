@@ -177,12 +177,10 @@ int main(int argc, char *argv[])
         { "clang34",                    'n', 0, 0, "Use clang 3.4 to build.", 3 },
         { "scan-build",                 's', 0, 0, "Use Clang Static Analyzer (scan-build) to build.", 3 },
 
-        { "CLANG_ANALYZE",              -1,  0, 0, "Do clang analyze build (will not link).", 100 },
         { "HAS_UPDATED_LIBUNWIND",      -1,  0, 0, "Build libbacktrace with HAS_UPDATED_LIBUNWIND.", 100 },
         { "VOGLTEST_LOAD_LIBVOGLTRACE", -1,  0, 0, "Don't implicitly link against libgl.so", 100 },
         { "VOGLTRACE_NO_PUBLIC_EXPORTS", -1,  0, 0, "Don't define public GL exports in libvogltrace.so.", 100 },
         { "VOGL_ENABLE_ASSERTS",        -1,  0, 0, "Enable assertions in voglcore builds (including release).", 100 },
-        { "CLANG_EVERYTHING",           -1,  0, 0, "Do clang build with -Weverything.", 100 },
         { "USE_TELEMETRY",              -1,  0, 0, "Build with Telemetry.", 100 },
         { "WITH_ASAN",                  -1,  0, 0, "Build with Clang address sanitizer.", 100 },
         { "CMAKE_VERBOSE",              -1,  0, 0, "Do verbose cmake.", 100 },
