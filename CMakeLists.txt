@@ -5,10 +5,12 @@ if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/vogl/src/build_options.cmake")
     message(FATAL_ERROR "ERROR: vogl source directory not found. Please clone vogl source project next to samples directory.")
 endif()
 
+set(VOGL_BUILDING_SAMPLES 0)
 add_subdirectory(vogl)
 
 set(SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/vogl/src")
 
+set(VOGL_BUILDING_SAMPLES 1)
 add_subdirectory(samples/gltests)
 add_subdirectory(samples/OGLSamples_GTruc)
 add_subdirectory(samples/OGLSuperBible)
