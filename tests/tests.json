@@ -2,7 +2,7 @@
 //
 // Can validate via: http://jsonlint.com/
 //
-// comparison_sum_threshhold: sum comparison threshold (0=CRC/exact matching, >0=sum hashing with threshold)
+// comparison_sum_threshold: sum comparison threshold (0=CRC/exact matching, >0=sum hashing with threshold)
 // comparison_frames_to_skip: # of frames to skip in CRC comparison
 
 {
@@ -10,7 +10,7 @@
 "g-truc1": {
     "window_width": 640,
     "window_height": 480,
-    "comparison_sum_threshhold": 0,
+    "comparison_sum_threshold": 0,
     "comparison_frames_to_skip": 0,
     "trim_frame_start": 100,
     "trim_frame_count": 100,
@@ -32,7 +32,7 @@
 "g-truc2": {
     "window_width": 640,
     "window_height": 480,
-    "comparison_sum_threshhold": 0,
+    "comparison_sum_threshold": 0,
     "comparison_frames_to_skip": 0,
     "trim_frame_start": 1,
     "trim_frame_count": 75,
@@ -81,7 +81,7 @@
 "g-truc3": {
     "window_width": 640,
     "window_height": 480,
-    "comparison_sum_threshhold": 0,
+    "comparison_sum_threshold": 0,
     "comparison_frames_to_skip": 0,
     "trim_frame_start": 200,
     "trim_frame_count": 200,
@@ -96,7 +96,7 @@
 "gl-320-fbo-shadow32": {
     "window_width": 640,
     "window_height": 480,
-    "comparison_sum_threshhold": 2048,
+    "comparison_sum_threshold": 2048,
     "comparison_frames_to_skip": 0,
     "trim_frame_start": 1,
     "trim_frame_count": 75,
@@ -108,7 +108,7 @@
 "gl-320-fbo-srgb32": {
     "window_width": 640,
     "window_height": 512,
-    "comparison_sum_threshhold": 0,
+    "comparison_sum_threshold": 0,
     "comparison_frames_to_skip": 2,
     "trim_frame_start": 2,
     "trim_frame_count": 75,
@@ -120,7 +120,7 @@
 "gl-330-sampler-wrap32": {
     "window_width": 1024,
     "window_height": 768,
-    "comparison_sum_threshhold": 0,
+    "comparison_sum_threshold": 0,
     "comparison_frames_to_skip": 0,
     "trim_frame_start": 1,
     "trim_frame_count": 75,
@@ -132,7 +132,7 @@
 "MetroLL": {
     "window_width": 1024,
     "window_height": 768,
-    "comparison_sum_threshhold": 0,
+    "comparison_sum_threshold": 0,
     "comparison_frames_to_skip": 0,
     "trim_frame_start": 1500,
     "trim_frame_count": 250,
@@ -144,7 +144,7 @@
 "q3_full": {
     "window_width": 1024,
     "window_height": 768,
-    "comparison_sum_threshhold": 2048,
+    "comparison_sum_threshold": 2048,
     "comparison_frames_to_skip": 0,
     "trim_frame_start": 1500,
     "trim_frame_count": 250,
@@ -156,7 +156,7 @@
 "p1_full": {
     "window_width": 1024,
     "window_height": 768,
-    "comparison_sum_threshhold": 2048,
+    "comparison_sum_threshold": 2048,
     "comparison_frames_to_skip": 0,
     "trim_frame_start": 500,
     "trim_frame_count": 1000,
@@ -168,7 +168,7 @@
 "glxspheres32": {
     "window_width": 1240,
     "window_height": 900,
-    "comparison_sum_threshhold": 2048,
+    "comparison_sum_threshold": 2048,
     "comparison_frames_to_skip": 0,
     "trim_frame_start": 500,
     "trim_frame_count": 250,
@@ -180,7 +180,7 @@
 "heaven_x86": {
     "window_width": 1280,
     "window_height": 1024,
-    "comparison_sum_threshhold": 0,
+    "comparison_sum_threshold": 0,
     "comparison_frames_to_skip": 0,
     "trim_frame_start": 500,
     "trim_frame_count": 250,
@@ -192,7 +192,7 @@
 "dota_linux": {
     "window_width": 1280,
     "window_height": 800,
-    "comparison_sum_threshhold": 0,
+    "comparison_sum_threshold": 0,
     "comparison_frames_to_skip": 3,
     "trim_frame_start": 22000,
     "trim_frame_count": 250,
@@ -204,7 +204,7 @@
 "tf2": {
     "window_width": 1280,
     "window_height": 800,
-    "comparison_sum_threshhold": 2048,
+    "comparison_sum_threshold": 2048,
     "comparison_frames_to_skip": 0,
     "trim_frame_start": 2600,
     "trim_frame_count": 250,
@@ -216,7 +216,7 @@
 "quake2": {
     "window_width": 1600,
     "window_height": 1200,
-    "comparison_sum_threshhold": 2048,
+    "comparison_sum_threshold": 2048,
     "comparison_frames_to_skip": 0,
     "trim_frame_start": 1000,
     "trim_frame_count": 250,
@@ -228,7 +228,7 @@
 "doom3": {
     "window_width": 1600,
     "window_height": 1200,
-    "comparison_sum_threshhold": 4096,
+    "comparison_sum_threshold": 4096,
     "comparison_frames_to_skip": 0,
     "trim_frame_start": 4000,
     "trim_frame_count": 500,
@@ -240,7 +240,7 @@
 "darwinia": {
     "window_width": 800,
     "window_height": 600,
-    "comparison_sum_threshhold": 4096,
+    "comparison_sum_threshold": 4096,
     "comparison_frames_to_skip": 0,
     "trim_frame_start": 100,
     "trim_frame_count": 100,
