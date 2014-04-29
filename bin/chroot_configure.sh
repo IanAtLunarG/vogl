@@ -152,6 +152,9 @@ if [[ -n "$DO_PACKAGES" ]]; then
     apt_get_install -y libxi-dev
     apt_get_install -y libxxf86vm-dev
 
+    # Install latex2man for libunwind.
+    apt_get_install -y texlive-extra-utils
+
     # Install a toilet (banners in console)
     apt_get_install -y toilet
 
@@ -360,8 +363,7 @@ fi
 ( cd $DESTDIR && sudo make install )
 
 # Create a link in /usr/local/bin to our ninja script
-sudo rm -rf /usr/local/bin/ninja
-sudo ln -s ${SCRIPTPATH}/ninja /usr/local/bin
+sudo ln -f -s ${SCRIPTPATH}/ninja /usr/local/bin
 
 #  Install and build clang 3.4
 REV=rev1
@@ -380,6 +382,15 @@ if [ ! -w "$DESTDIR/build/bin/clang" ]; then
   banner_run ninja
   popd
 fi
+
+# Create Clang Static Analyzer and Format links
+sudo ln -f -s ${DESTDIR}/build/bin/clang /usr/local/bin
+sudo ln -f -s ${DESTDIR}/build/bin/clang++ /usr/local/bin
+sudo ln -f -s ${DESTDIR}/llvm-3.4/tools/clang/tools/scan-view/scan-view /usr/local/bin
+sudo cp ${DESTDIR}/llvm-3.4/tools/clang/tools/scan-build/* /usr/local/bin
+
+sudo ln -f -s ${DESTDIR}/build/bin/clang-format /usr/local/bin
+sudo ln -f -s ${DESTDIR}/build/bin/clang-format ${SCRIPTPATH}/${ARCH}
 
 #
 # Set up our compiler links

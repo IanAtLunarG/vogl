@@ -73,7 +73,7 @@ struct test_info_t
 
         window_width = 0;
         window_height = 0;
-        comparison_sum_threshhold = 0;
+        comparison_sum_threshold = 0;
         comparison_frames_to_skip = 0;
         trim_frame_start = 0;
         trim_frame_count = 0;
@@ -90,7 +90,7 @@ struct test_info_t
 
     int window_width;
     int window_height;
-    int comparison_sum_threshhold;
+    int comparison_sum_threshold;
     int comparison_frames_to_skip;
     int trim_frame_start;
     int trim_frame_count;
@@ -411,15 +411,17 @@ void CTests::setup_test_commands(const char *name, test_info_t &testinfo)
     testinfo.name = string_format("%s : %s", name, bname);
 
     std::string base = getbasename(testinfo.tracefile);
-    std::string trace_sum_arg = testinfo.comparison_sum_threshhold ? " --vogl_sum_hashing" : "";
-    std::string sum_arg = testinfo.comparison_sum_threshhold ? " -sum_hashing" : "";
+    std::string trace_sum_arg = testinfo.comparison_sum_threshold ? " --vogl_sum_hashing" : "";
+    std::string sum_arg = testinfo.comparison_sum_threshold ? " -sum_hashing" : "";
     std::string vogl_trace_file = string_format(" %s/%s.trace.bin", P_tmpdir, base.c_str());
     std::string trace_hash_file = string_format(" %s/%s_trace_hashes.txt", P_tmpdir, base.c_str());
     std::string replay_hash_file = string_format(" %s/%s_replay_hashes.txt", P_tmpdir, base.c_str());
     std::string window_size = string_format(" -width %u -height %u ", testinfo.window_width, testinfo.window_height);
-    std::string sum_compare_threshold = string_format(" -sum_compare_threshold %u", testinfo.comparison_sum_threshhold);
+    std::string sum_compare_threshold = string_format(" -sum_compare_threshold %u", testinfo.comparison_sum_threshold);
     std::string compare_ignore_frames = string_format(" -compare_ignore_frames %u", testinfo.comparison_frames_to_skip);
     std::string replayapp = strstr(testinfo.tracefile.c_str(), ".trace") ? m_glretrace32 : m_voglreplay32_stable;
+
+    //$ TODO: launch this stuff with valgrind?
 
     std::string vogl_cmd_line = "VOGL_CMD_LINE=\"";
     vogl_cmd_line += "--vogl_tracefile" + vogl_trace_file + " --vogl_dump_backbuffer_hashes" + trace_hash_file + trace_sum_arg;
@@ -490,8 +492,8 @@ void CTests::add_test(const char *name, json_value *obj)
                 testinfo.window_width = val->u.integer;
             else if (objname == "window_height")
                 testinfo.window_height = val->u.integer;
-            else if (objname == "comparison_sum_threshhold")
-                testinfo.comparison_sum_threshhold = val->u.integer;
+            else if (objname == "comparison_sum_threshold")
+                testinfo.comparison_sum_threshold = val->u.integer;
             else if (objname == "comparison_frames_to_skip")
                 testinfo.comparison_frames_to_skip = val->u.integer;
             else if (objname == "trim_frame_start")
@@ -763,11 +765,11 @@ void CTests::list_tests()
     {
         const test_info_t &testinfo = m_testinfos[i];
 
-        printf("%d) %s w:%d h:%d trim_start:%d trim_count:%d threshhold:%d skip:%d %s\n",
+        printf("%d) %s w:%d h:%d trim_start:%d trim_count:%d threshold:%d skip:%d %s\n",
                testinfo.testid, testinfo.name.c_str(),
                testinfo.window_width, testinfo.window_height,
                testinfo.trim_frame_start, testinfo.trim_frame_count,
-               testinfo.comparison_sum_threshhold, testinfo.comparison_frames_to_skip,
+               testinfo.comparison_sum_threshold, testinfo.comparison_frames_to_skip,
                testinfo.tracefile.c_str());
 
         if (m_verbose)

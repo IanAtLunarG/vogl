@@ -173,6 +173,7 @@ main(int argc, char **argv)
         { "debug",                      'd', 0,             0, "Debug spew from LD_DEBUG=lib."},
         { "vogl_pause",                 -1,  0,             0, "Add --vogl_pause." },
         { "vogl_backtrace_all_calls",   -1,  0,             0, "Add --vogl_backtrace_all_calls." },
+        { "vogl_backtrace_no_calls",    -1,  0,             0, "Add --vogl_backtrace_no_calls." },
         { "show-type-list",             -2,  0,             0, "Produce list of whitespace-separated words used for command completion." },
         { "help",                       '?', 0,             0, "Give this help message." },
         { 0 }
