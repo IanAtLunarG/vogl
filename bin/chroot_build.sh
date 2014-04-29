@@ -110,6 +110,7 @@ function cleanup()
     echo "  BASH_VERSION is $BASH_VERSION"
     echo "  pwd is \"$(pwd)\""
     echo "  PATH is \"$PATH\""
+    echo "NOTE: If failure occured in schroot, scroll upwards for more specific error message."
     echo ""
     tput sgr0
 }
