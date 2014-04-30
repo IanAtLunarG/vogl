@@ -35,6 +35,8 @@
 #include <string>
 #include <vector>
 #include <fnmatch.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #include "../external/json-parser/json.c"
 
@@ -361,6 +363,14 @@ std::string gettimestr(const char *fmt)
 }
 
 //----------------------------------------------------------------------------------------------------------------------
+// Return temp directory.
+//----------------------------------------------------------------------------------------------------------------------
+std::string gettempdir()
+{
+    return string_format("%s/%s", P_tmpdir, "vogltests");
+}
+
+//----------------------------------------------------------------------------------------------------------------------
 // CTests init function.
 //----------------------------------------------------------------------------------------------------------------------
 void CTests::init(const arguments_t &args)
@@ -410,12 +420,13 @@ void CTests::setup_test_commands(const char *name, test_info_t &testinfo)
     bname = bname ? (bname + 1) : testinfo.tracefile.c_str();
     testinfo.name = string_format("%s : %s", name, bname);
 
+    std::string tempdir = gettempdir();
     std::string base = getbasename(testinfo.tracefile);
     std::string trace_sum_arg = testinfo.comparison_sum_threshold ? " --vogl_sum_hashing" : "";
     std::string sum_arg = testinfo.comparison_sum_threshold ? " -sum_hashing" : "";
-    std::string vogl_trace_file = string_format(" %s/%s.trace.bin", P_tmpdir, base.c_str());
-    std::string trace_hash_file = string_format(" %s/%s_trace_hashes.txt", P_tmpdir, base.c_str());
-    std::string replay_hash_file = string_format(" %s/%s_replay_hashes.txt", P_tmpdir, base.c_str());
+    std::string vogl_trace_file = string_format(" %s/%s.trace.bin", tempdir.c_str(), base.c_str());
+    std::string trace_hash_file = string_format(" %s/%s_trace_hashes.txt", tempdir.c_str(), base.c_str());
+    std::string replay_hash_file = string_format(" %s/%s_replay_hashes.txt", tempdir.c_str(), base.c_str());
     std::string window_size = string_format(" -width %u -height %u ", testinfo.window_width, testinfo.window_height);
     std::string sum_compare_threshold = string_format(" -sum_compare_threshold %u", testinfo.comparison_sum_threshold);
     std::string compare_ignore_frames = string_format(" -compare_ignore_frames %u", testinfo.comparison_frames_to_skip);
@@ -452,8 +463,8 @@ void CTests::setup_test_commands(const char *name, test_info_t &testinfo)
     if (testinfo.trim_frame_count)
     {
         // Trim test.
-        std::string vogl_trace_file_trimmed = string_format("%s/%s_trimmed.trace.bin", P_tmpdir, base.c_str());
-        std::string replay_hash_file_trimmed = string_format(" %s/%s_replay_hashes_trimmed.txt", P_tmpdir, base.c_str());
+        std::string vogl_trace_file_trimmed = string_format("%s/%s_trimmed.trace.bin", tempdir.c_str(), base.c_str());
+        std::string replay_hash_file_trimmed = string_format(" %s/%s_replay_hashes_trimmed.txt", tempdir.c_str(), base.c_str());
         std::string trim_frame_str = string_format(" -trim_frame %u -trim_len %u", testinfo.trim_frame_start, testinfo.trim_frame_count) +
                 " -trim_file ";
 
@@ -866,6 +877,10 @@ int main(int argc, char *argv[])
         { 0 }
     };
 
+    std::string tempdir = gettempdir();
+
+    mkdir(tempdir.c_str(), 0755);
+
     // Get current time.
     struct timespec timespec;
     static const uint64_t g_BILLION = 1000000000;
@@ -900,7 +915,7 @@ int main(int argc, char *argv[])
     if (!args.logfile.size())
     {
         std::string timestr = gettimestr("%Y_%m_%d-%H_%M_%S");
-        args.logfile = string_format("%s/vogltests.%s.log", P_tmpdir, timestr.c_str());
+        args.logfile = string_format("%s/vogltests.%s.log", tempdir.c_str(), timestr.c_str());
     }
 
     // Open our logfile.
