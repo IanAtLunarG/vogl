@@ -229,7 +229,7 @@ function cleanup()
 }
 # from "man bash":
 #   If a sigspec is EXIT (0) the command arg is executed on exit from the shell.
-# trap cleanup EXIT
+trap cleanup EXIT
 
 
 #  To differentiate a 32 from a 64 bit system
@@ -412,4 +412,4 @@ sudo update-alternatives --set cpp-bin /usr/bin/cpp-4.8
 sudo ldconfig
 
 # Clear our exit trap handler
-# trap - EXIT
+trap - EXIT
