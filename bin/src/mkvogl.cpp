@@ -183,6 +183,7 @@ int main(int argc, char *argv[])
         { "VOGL_ENABLE_ASSERTS",        -1,  0, 0, "Enable assertions in voglcore builds (including release).", 100 },
         { "USE_TELEMETRY",              -1,  0, 0, "Build with Telemetry.", 100 },
         { "WITH_ASAN",                  -1,  0, 0, "Build with Clang address sanitizer.", 100 },
+        { "USE_MALLOC",                 -1,  0, 0, "Use system malloc (not STB Malloc).", 100 },
         { "CMAKE_VERBOSE",              -1,  0, 0, "Do verbose cmake.", 100 },
 
         { "help",                       '?', 0, 0, "Give this help message.", -1 },
