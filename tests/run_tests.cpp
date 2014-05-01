@@ -35,6 +35,7 @@
 #include <string>
 #include <vector>
 #include <fnmatch.h>
+#include <ftw.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -367,7 +368,16 @@ std::string gettimestr(const char *fmt)
 //----------------------------------------------------------------------------------------------------------------------
 std::string gettempdir()
 {
-    return string_format("%s/%s", P_tmpdir, "vogltests");
+    return string_format("%s/%s", P_tmpdir, "_vogltests_tmp");
+}
+
+static int unlink_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
+{
+    int rv = remove(fpath);
+    if (rv)
+        perror(fpath);
+
+    return rv;
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -464,15 +474,28 @@ void CTests::setup_test_commands(const char *name, test_info_t &testinfo)
     {
         // Trim test.
         std::string vogl_trace_file_trimmed = string_format("%s/%s_trimmed.trace.bin", tempdir.c_str(), base.c_str());
+        std::string vogl_trace_file_trimmed2 = string_format("%s/%s_trimmed2.trace.bin", tempdir.c_str(), base.c_str());
         std::string replay_hash_file_trimmed = string_format(" %s/%s_replay_hashes_trimmed.txt", tempdir.c_str(), base.c_str());
-        std::string trim_frame_str = string_format(" -trim_frame %u -trim_len %u", testinfo.trim_frame_start, testinfo.trim_frame_count) +
-                " -trim_file ";
+        std::string trim_frame_str = string_format(" -trim_frame %u -trim_len %u", testinfo.trim_frame_start, testinfo.trim_frame_count) + " -trim_file ";
+        std::string jdump_dir = tempdir + "/jdump_" + base;
 
+        if (!m_dryrun)
+            mkdir(jdump_dir.c_str(), 0755);
+
+        // Trim the trace file.
         cmdinfo.command = m_voglreplay32 + vogl_trace_file + trim_frame_str + vogl_trace_file_trimmed;
         testinfo.command_infos.push_back(cmdinfo);
 
+        // Losslessly dump trace to JSON.
+        cmdinfo.command = m_voglreplay32 + " " + vogl_trace_file_trimmed + " --dump " + jdump_dir + "/jdump";
+        testinfo.command_infos.push_back(cmdinfo);
+
+        // Read JSON trace back to binary trace file.
+        cmdinfo.command = m_voglreplay32 + " --parse " + jdump_dir + "/jdump " + vogl_trace_file_trimmed2;
+        testinfo.command_infos.push_back(cmdinfo);
+
         cmdinfo.command = m_voglreplay32 + sum_arg + " -lock_window_dimensions" + window_size +
-                vogl_trace_file_trimmed + " -dump_backbuffer_hashes" + replay_hash_file_trimmed;
+                vogl_trace_file_trimmed2 + " -dump_backbuffer_hashes" + replay_hash_file_trimmed;
         testinfo.command_infos.push_back(cmdinfo);
 
         cmdinfo.command = m_voglreplay32 + sum_arg + " -compare_hash_files" + sum_compare_threshold +
@@ -879,8 +902,6 @@ int main(int argc, char *argv[])
 
     std::string tempdir = gettempdir();
 
-    mkdir(tempdir.c_str(), 0755);
-
     // Get current time.
     struct timespec timespec;
     static const uint64_t g_BILLION = 1000000000;
@@ -917,6 +938,13 @@ int main(int argc, char *argv[])
         std::string timestr = gettimestr("%Y_%m_%d-%H_%M_%S");
         args.logfile = string_format("%s/vogltests.%s.log", tempdir.c_str(), timestr.c_str());
     }
+
+    if (access(tempdir.c_str(), F_OK) == 0)
+    {
+        printf("Removing %s directory.\n", tempdir.c_str());
+        nftw(tempdir.c_str(), unlink_cb, 64, FTW_DEPTH | FTW_PHYS);
+    }
+    mkdir(tempdir.c_str(), 0755);
 
     // Open our logfile.
     FILE *f = fopen(args.logfile.c_str(), "w");
