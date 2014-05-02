@@ -78,12 +78,13 @@ struct test_info_t
 
     struct command_info_t
     {
-        command_info_t() : ret(0), launched(0) {}
+        command_info_t() : ret(0), launched(0), time0(0) {}
 
         int ret;             // Command return code.
         int launched;        // Command launched (0:no, 1:yes, -1:error)
         std::string command; // Cmdline to launch.
         std::string output;  // Output from command.
+        uint64_t time0;
     };
     size_t icommand;                           // Current command
     std::vector<command_info_t> command_infos; // Array of commands to execute.
@@ -174,6 +175,24 @@ private:
     // Array of tests.
     std::vector<test_info_t> m_testinfos;
 };
+
+//----------------------------------------------------------------------------------------------------------------------
+// get_time function.
+//----------------------------------------------------------------------------------------------------------------------
+inline uint64_t get_time()
+{
+    static const uint64_t g_BILLION = 1000000000;
+
+    struct timespec timespec;
+    clock_gettime(CLOCK_MONOTONIC, &timespec);
+    return (timespec.tv_sec * g_BILLION) + timespec.tv_nsec;
+}
+
+inline float time_to_sec(uint64_t time)
+{
+    static const double g_rcpBILLION = (1.0 / 1000000000);
+    return (float)(time * g_rcpBILLION);
+}
 
 //----------------------------------------------------------------------------------------------------------------------
 // Argp parse function.
@@ -751,6 +770,8 @@ bool CTests::check_command(test_info_t *testinfo)
         {
             m_commands_launched++;
 
+            commandinfo.time0 = get_time();
+
             testinfo->file = popen((commandinfo.command + " 2>&1").c_str(), "r");
             if (!testinfo->file)
             {
@@ -805,8 +826,10 @@ bool CTests::check_command(test_info_t *testinfo)
         if (commandinfo.ret == -1)
             commandinfo.ret = errno ? errno : -1;
 
-        printf("          #%d (%lu/%lu): '%s' (Return: %d)\n", testinfo->testid, testinfo->icommand,
-               testinfo->command_infos.size() - 1, testinfo->name.c_str(), commandinfo.ret);
+        float time = time_to_sec(get_time() - commandinfo.time0);
+
+        printf("          #%d (%lu/%lu): '%s' %.2fs (Return: %d)\n", testinfo->testid, testinfo->icommand,
+               testinfo->command_infos.size() - 1, testinfo->name.c_str(), time, commandinfo.ret);
 
         if (commandinfo.ret == 0)
         {
@@ -994,10 +1017,7 @@ int main(int argc, char *argv[])
     std::string tempdir = gettempdir();
 
     // Get current time.
-    struct timespec timespec;
-    static const uint64_t g_BILLION = 1000000000;
-    clock_gettime(CLOCK_MONOTONIC, &timespec);
-    uint64_t time0 = (timespec.tv_sec * g_BILLION) + timespec.tv_nsec;
+    uint64_t time0 = get_time();
 
     arguments_t args;
     args.vogl_proj_dir = getenv("VOGL_PROJ_DIR");
@@ -1065,10 +1085,8 @@ int main(int argc, char *argv[])
     tests.spew_results(f, argv);
 
     // Spew out time.
-    static const double g_rcpBILLION = (1.0 / 1000000000);
-    clock_gettime(CLOCK_MONOTONIC, &timespec);
-    time0 = ((timespec.tv_sec * g_BILLION) + timespec.tv_nsec) - time0;
-    logprintf(f, "\nTime: %.2fs\n", time0 * g_rcpBILLION);
+    time0 = get_time() - time0;
+    logprintf(f, "\nTime: %.2fs\n", time_to_sec(time0));
 
     printf("Wrote logfile %s\n\n", args.logfile.c_str());
 
