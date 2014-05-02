@@ -50,11 +50,7 @@
 //----------------------------------------------------------------------------------------------------------------------
 struct arguments_t
 {
-    arguments_t()
-    {
-        flags = 0;
-        jobs = 0;
-    }
+    arguments_t() : flags(0), jobs(0) {}
 
     unsigned int flags;  // F_VERBOSE, F_DRYRUN, ...
     unsigned int jobs;   // Number of jobs to execute simultaneously.
@@ -70,26 +66,42 @@ struct arguments_t
 //----------------------------------------------------------------------------------------------------------------------
 struct test_info_t
 {
-    test_info_t()
-    {
-        testid = -1;
+    test_info_t() : testid(-1), file(NULL), fileid(0), icommand(0) {}
 
+    int testid;
+    std::string name;      // Something like "g-truc3:gl-320-buffer-uniform32.trace".
+
+    // popen info
+    FILE *file; // Pipe to our launched command.
+    int fileid; // Pipe file id.
+
+    struct command_info_t
+    {
+        command_info_t() : ret(0), launched(0) {}
+
+        int ret;             // Command return code.
+        int launched;        // Command launched (0:no, 1:yes, -1:error)
+        std::string command; // Cmdline to launch.
+        std::string output;  // Output from command.
+    };
+    size_t icommand;                           // Current command
+    std::vector<command_info_t> command_infos; // Array of commands to execute.
+};
+
+//----------------------------------------------------------------------------------------------------------------------
+// Tracefile information read from tests.json.
+//----------------------------------------------------------------------------------------------------------------------
+struct retrace_info_t
+{
+    retrace_info_t()
+    {
         window_width = 0;
         window_height = 0;
         comparison_sum_threshold = 0;
         comparison_frames_to_skip = 0;
         trim_frame_start = 0;
         trim_frame_count = 0;
-
-        file = NULL;
-        fileid = 0;
-
-        icommand = 0;
     }
-
-    int testid;
-    std::string name;      // Something like "g-truc3:gl-320-buffer-uniform32.trace".
-    std::string tracefile; // Full tracefile name.
 
     int window_width;
     int window_height;
@@ -98,19 +110,8 @@ struct test_info_t
     int trim_frame_start;
     int trim_frame_count;
 
-    // popen info
-    FILE *file; // Pipe to our launched command.
-    int fileid; // Pipe file id.
-
-    struct command_info_t
-    {
-        int ret;             // Command return code.
-        int launched;        // Command launched (0:no, 1:yes, -1:error)
-        std::string command; // Cmdline to launch.
-        std::string output;  // Output from command.
-    };
-    size_t icommand;                           // Current command
-    std::vector<command_info_t> command_infos; // Array of commands to execute.
+    // Full tracefile name.
+    std::string tracefile; 
 };
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -132,9 +133,9 @@ public:
     // Add a json file of tests.
     void add_test_file(std::string filename);
 
-    // Print out lists of tests.
-    void list_tests();
-
+    // Add a bunch of voglcore tests.
+    void add_voglcore_tests();
+    
     // Execute the tests.
     void exec_tests(unsigned int jobs);
 
@@ -143,7 +144,7 @@ public:
 
 private:
     void add_test(const char *name, json_value *obj);
-    void setup_test_commands(const char *name, test_info_t &testinfo);
+    void setup_test_commands(const char *name, test_info_t &testinfo, const retrace_info_t &retraceinfo);
     bool check_command(test_info_t *testinfo);
 
     bool m_verbose;
@@ -165,6 +166,9 @@ private:
     std::string m_voglreplay64;
     std::string m_glretrace32;         // ./i386/glretrace
     std::string m_voglreplay32_stable; // ./i386/voglreplay32_stable
+
+    std::string m_voglcoretest32;
+    std::string m_voglcoretest64;
 
     // Array of tests.
     std::vector<test_info_t> m_testinfos;
@@ -411,38 +415,44 @@ void CTests::init(const arguments_t &args)
     if (access(m_voglreplay32_stable.c_str(), F_OK))
         errorf("ERROR: Could not find %s\n", m_voglreplay32_stable.c_str());
 
+    m_voglcoretest32 = args.vogl_trace_dir + "/vogltest32";
+    m_voglcoretest64 = args.vogl_trace_dir + "/vogltest64";
+
     printf("\nUsing:\n");
     printf("  %s\n", m_libvogltrace32.c_str());
     printf("  %s\n", m_voglreplay32.c_str());
     printf("  %s\n", m_glretrace32.c_str());
     printf("  %s\n", m_voglreplay32_stable.c_str());
+    printf("  %s\n", m_voglcoretest32.c_str());
+    printf("  %s\n", m_voglcoretest64.c_str());
+    printf("\n");
 }
 
 //----------------------------------------------------------------------------------------------------------------------
 // Set up commands needed for individual test.
 //----------------------------------------------------------------------------------------------------------------------
-void CTests::setup_test_commands(const char *name, test_info_t &testinfo)
+void CTests::setup_test_commands(const char *name, test_info_t &testinfo, const retrace_info_t &retraceinfo)
 {
     testinfo.command_infos.clear();
 
     // Construct something like "g-truc3 : gl-320-buffer-uniform32.trace"
-    const char *bname = strrchr(testinfo.tracefile.c_str(), '/');
-    bname = bname ? (bname + 1) : testinfo.tracefile.c_str();
+    const char *bname = strrchr(retraceinfo.tracefile.c_str(), '/');
+    bname = bname ? (bname + 1) : retraceinfo.tracefile.c_str();
     testinfo.name = string_format("%s : %s", name, bname);
 
     std::string tempdir = gettempdir();
-    std::string base = getbasename(testinfo.tracefile);
-    std::string trace_sum_arg = testinfo.comparison_sum_threshold ? " --vogl_sum_hashing" : "";
-    std::string sum_arg = testinfo.comparison_sum_threshold ? " -sum_hashing" : "";
+    std::string base = getbasename(retraceinfo.tracefile);
+    std::string trace_sum_arg = retraceinfo.comparison_sum_threshold ? " --vogl_sum_hashing" : "";
+    std::string sum_arg = retraceinfo.comparison_sum_threshold ? " -sum_hashing" : "";
     std::string vogl_trace_file = string_format(" %s/%s.trace.bin", tempdir.c_str(), base.c_str());
     std::string trace_hash_file = string_format(" %s/%s_trace_hashes.txt", tempdir.c_str(), base.c_str());
     std::string replay_hash_file = string_format(" %s/%s_replay_hashes.txt", tempdir.c_str(), base.c_str());
-    std::string window_size = string_format(" -width %u -height %u ", testinfo.window_width, testinfo.window_height);
-    std::string sum_compare_threshold = string_format(" -sum_compare_threshold %u", testinfo.comparison_sum_threshold);
-    std::string compare_ignore_frames = string_format(" -compare_ignore_frames %u", testinfo.comparison_frames_to_skip);
-    std::string replayapp = strstr(testinfo.tracefile.c_str(), ".trace") ? m_glretrace32 : m_voglreplay32_stable;
+    std::string window_size = string_format(" -width %u -height %u ", retraceinfo.window_width, retraceinfo.window_height);
+    std::string sum_compare_threshold = string_format(" -sum_compare_threshold %u", retraceinfo.comparison_sum_threshold);
+    std::string compare_ignore_frames = string_format(" -compare_ignore_frames %u", retraceinfo.comparison_frames_to_skip);
+    std::string replayapp = strstr(retraceinfo.tracefile.c_str(), ".trace") ? m_glretrace32 : m_voglreplay32_stable;
 
-    //$ TODO: launch this stuff with valgrind?
+    //$ TODO mikesart: launch this stuff with valgrind?
 
     std::string vogl_cmd_line = "VOGL_CMD_LINE=\"";
     vogl_cmd_line += "--vogl_tracefile" + vogl_trace_file + " --vogl_dump_backbuffer_hashes" + trace_hash_file + trace_sum_arg;
@@ -457,10 +467,8 @@ void CTests::setup_test_commands(const char *name, test_info_t &testinfo)
     }
 
     test_info_t::command_info_t cmdinfo;
-    cmdinfo.ret = 0;
-    cmdinfo.launched = 0;
 
-    cmdinfo.command = vogl_cmd_line + ld_preload + " " + replayapp + " --benchmark " + testinfo.tracefile;
+    cmdinfo.command = vogl_cmd_line + ld_preload + " " + replayapp + " --benchmark " + retraceinfo.tracefile;
     testinfo.command_infos.push_back(cmdinfo);
 
     cmdinfo.command = m_voglreplay32 + vogl_trace_file + sum_arg + " -dump_backbuffer_hashes" + replay_hash_file +
@@ -470,13 +478,13 @@ void CTests::setup_test_commands(const char *name, test_info_t &testinfo)
     cmdinfo.command = m_voglreplay32 + sum_arg + " --compare_hash_files" + replay_hash_file + trace_hash_file + compare_ignore_frames + sum_compare_threshold;
     testinfo.command_infos.push_back(cmdinfo);
 
-    if (testinfo.trim_frame_count)
+    if (retraceinfo.trim_frame_count)
     {
         // Trim test.
         std::string vogl_trace_file_trimmed = string_format("%s/%s_trimmed.trace.bin", tempdir.c_str(), base.c_str());
         std::string vogl_trace_file_trimmed2 = string_format("%s/%s_trimmed2.trace.bin", tempdir.c_str(), base.c_str());
         std::string replay_hash_file_trimmed = string_format(" %s/%s_replay_hashes_trimmed.txt", tempdir.c_str(), base.c_str());
-        std::string trim_frame_str = string_format(" -trim_frame %u -trim_len %u", testinfo.trim_frame_start, testinfo.trim_frame_count) + " -trim_file ";
+        std::string trim_frame_str = string_format(" -trim_frame %u -trim_len %u", retraceinfo.trim_frame_start, retraceinfo.trim_frame_count) + " -trim_file ";
         std::string jdump_dir = tempdir + "/jdump_" + base;
 
         if (!m_dryrun)
@@ -500,7 +508,7 @@ void CTests::setup_test_commands(const char *name, test_info_t &testinfo)
 
         cmdinfo.command = m_voglreplay32 + sum_arg + " -compare_hash_files" + sum_compare_threshold +
                 replay_hash_file_trimmed + trace_hash_file +
-                string_format(" -compare_first_frame %u -ignore_line_count_differences", testinfo.trim_frame_start);
+                string_format(" -compare_first_frame %u -ignore_line_count_differences", retraceinfo.trim_frame_start);
         testinfo.command_infos.push_back(cmdinfo);
     }
 }
@@ -514,6 +522,7 @@ void CTests::add_test(const char *name, json_value *obj)
         errorf("ERROR: parse_object was passed a non json_object.\n");
 
     test_info_t testinfo;
+    retrace_info_t retraceinfo;
 
     for (unsigned int i = 0; i < obj->u.object.length; i++)
     {
@@ -523,17 +532,17 @@ void CTests::add_test(const char *name, json_value *obj)
         if (val->type == json_integer)
         {
             if (objname == "window_width")
-                testinfo.window_width = val->u.integer;
+                retraceinfo.window_width = val->u.integer;
             else if (objname == "window_height")
-                testinfo.window_height = val->u.integer;
+                retraceinfo.window_height = val->u.integer;
             else if (objname == "comparison_sum_threshold")
-                testinfo.comparison_sum_threshold = val->u.integer;
+                retraceinfo.comparison_sum_threshold = val->u.integer;
             else if (objname == "comparison_frames_to_skip")
-                testinfo.comparison_frames_to_skip = val->u.integer;
+                retraceinfo.comparison_frames_to_skip = val->u.integer;
             else if (objname == "trim_frame_start")
-                testinfo.trim_frame_start = val->u.integer;
+                retraceinfo.trim_frame_start = val->u.integer;
             else if (objname == "trim_frame_count")
-                testinfo.trim_frame_count = val->u.integer;
+                retraceinfo.trim_frame_count = val->u.integer;
             else
                 errorf("ERROR: Unknown object '%s'\n", objname.c_str());
         }
@@ -576,10 +585,27 @@ void CTests::add_test(const char *name, json_value *obj)
                         else
                         {
                             // Set up the commands we need to run.
-                            testinfo.tracefile = tracefile;
-                            setup_test_commands(name, testinfo);
+                            retraceinfo.tracefile = tracefile;
+                            setup_test_commands(name, testinfo, retraceinfo);
                             // Add this test trace file.
                             m_testinfos.push_back(testinfo);
+
+                            if (m_listtests)
+                            {
+                                printf("%d) %s w:%d h:%d trim_start:%d trim_count:%d threshold:%d skip:%d %s\n",
+                                       m_testid, testinfo.name.c_str(),
+                                       retraceinfo.window_width, retraceinfo.window_height,
+                                       retraceinfo.trim_frame_start, retraceinfo.trim_frame_count,
+                                       retraceinfo.comparison_sum_threshold, retraceinfo.comparison_frames_to_skip,
+                                       retraceinfo.tracefile.c_str());
+
+                                if (m_verbose)
+                                {
+                                    for (size_t j = 0; j < testinfo.command_infos.size(); j++)
+                                        printf("  %s\n", testinfo.command_infos[j].command.c_str());
+                                    printf("\n");
+                                }
+                            }
                         }
                     }
                 }
@@ -622,6 +648,75 @@ void CTests::add_test_file(std::string filename)
     json_value_free(val);
 }
 
+//----------------------------------------------------------------------------------------------------------------------
+// Add bunch of voglcore tests. Ie:
+//   vogltest32 --test md5
+//----------------------------------------------------------------------------------------------------------------------
+void CTests::add_voglcore_tests()
+{
+    static const char *s_tests[] =
+    {
+    #define DEFTEST(_x) #_x
+        DEFTEST(rh_hash_map),
+        DEFTEST(object_pool),
+        DEFTEST(dynamic_string),
+        DEFTEST(md5),
+        DEFTEST(introsort),
+        DEFTEST(rand),
+        DEFTEST(regexp),
+        DEFTEST(strutils),
+        DEFTEST(map),
+        DEFTEST(hash_map),
+        DEFTEST(sort),
+        DEFTEST(sparse_vector),
+        DEFTEST(bigint128),
+    #undef DEFTEST
+    };
+
+    test_info_t testinfo;
+
+    for (size_t i = 0; i < sizeof(s_tests) / sizeof(s_tests[0]); i++)
+    {
+        test_info_t::command_info_t cmdinfo;
+
+        testinfo.name = s_tests[i];
+        testinfo.testid = m_testid++;
+
+        cmdinfo.command = m_voglcoretest64 + " --test " + s_tests[i];
+
+        bool add = true;
+        if (m_test_patterns.size())
+        {
+            add = false;
+
+            // Check if any part of the command line matches the pattern string.
+            for (size_t p = 0; p < m_test_patterns.size(); p++)
+            {
+                int ret = fnmatch(m_test_patterns[p].c_str(), cmdinfo.command.c_str(), FNM_NOESCAPE);
+                if (!ret)
+                {
+                    add = true;
+                    break;
+                }
+            }
+        }
+
+        if (add)
+        {
+            testinfo.command_infos.clear();
+            testinfo.command_infos.push_back(cmdinfo);
+
+            // Add this test trace file.
+            m_testinfos.push_back(testinfo);
+
+            if (m_listtests)
+            {
+                printf("%d) %s\n", m_testid, cmdinfo.command.c_str());
+            }
+        }
+    }
+}
+    
 //----------------------------------------------------------------------------------------------------------------------
 // Launch and check status of command for test.
 //----------------------------------------------------------------------------------------------------------------------
@@ -791,31 +886,6 @@ void CTests::exec_tests(unsigned int jobs)
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-// List tests we read in.
-//----------------------------------------------------------------------------------------------------------------------
-void CTests::list_tests()
-{
-    for (size_t i = 0; i < m_testinfos.size(); i++)
-    {
-        const test_info_t &testinfo = m_testinfos[i];
-
-        printf("%d) %s w:%d h:%d trim_start:%d trim_count:%d threshold:%d skip:%d %s\n",
-               testinfo.testid, testinfo.name.c_str(),
-               testinfo.window_width, testinfo.window_height,
-               testinfo.trim_frame_start, testinfo.trim_frame_count,
-               testinfo.comparison_sum_threshold, testinfo.comparison_frames_to_skip,
-               testinfo.tracefile.c_str());
-
-        if (m_verbose)
-        {
-            for (size_t j = 0; j < testinfo.command_infos.size(); j++)
-                printf("  %s\n", testinfo.command_infos[j].command.c_str());
-            printf("\n");
-        }
-    }
-}
-
-//----------------------------------------------------------------------------------------------------------------------
 // Write tests results to log file.
 //----------------------------------------------------------------------------------------------------------------------
 void CTests::spew_results(FILE *f, char *argv[])
@@ -964,9 +1034,8 @@ int main(int argc, char *argv[])
         tests.add_test_file(args.filenames[i]);
     }
 
-    // List tests if specified.
-    if (args.flags & F_LISTTESTS)
-        tests.list_tests();
+    // Add the voglcore tests.
+    tests.add_voglcore_tests();
 
     // Execute tests.
     tests.exec_tests(args.jobs);
