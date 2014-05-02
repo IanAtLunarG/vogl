@@ -29,6 +29,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <libgen.h>
 #include <argp.h>
 #include <sys/utsname.h>
@@ -825,6 +826,16 @@ bool CTests::check_command(test_info_t *testinfo)
 }
 
 //----------------------------------------------------------------------------------------------------------------------
+// SIGINT Signal handler.
+//----------------------------------------------------------------------------------------------------------------------
+static volatile int g_ctrlc_hit = 0;
+static void ctrlc_handler(int s)
+{
+    printf("\nStopping tests (caught signal %d).\n",s);
+    g_ctrlc_hit = 1;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
 // Execute all tests read from json files.
 //----------------------------------------------------------------------------------------------------------------------
 void CTests::exec_tests(unsigned int jobs)
@@ -852,8 +863,15 @@ void CTests::exec_tests(unsigned int jobs)
         joblist.push_back(&m_testinfos[nextjob++]);
     }
 
+    // Set up Ctrl+C Signal handler.
+    struct sigaction new_sa, old_sa;
+    new_sa.sa_handler = ctrlc_handler;
+    sigemptyset(&new_sa.sa_mask);
+    new_sa.sa_flags = 0;
+    sigaction(SIGINT, &new_sa, &old_sa);
+
     // Continue while the joblist still has items in it.
-    while (joblist.size() > 0)
+    while (!g_ctrlc_hit && (joblist.size() > 0))
     {
         size_t index = 0;
 
@@ -883,6 +901,9 @@ void CTests::exec_tests(unsigned int jobs)
             }
         }
     }
+
+    // Restore old signal handler.
+    sigaction(SIGINT, &old_sa, NULL);
 }
 
 //----------------------------------------------------------------------------------------------------------------------
