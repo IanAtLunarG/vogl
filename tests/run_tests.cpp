@@ -34,6 +34,7 @@
 #include <argp.h>
 #include <sys/utsname.h>
 #include <string>
+#include <algorithm>
 #include <vector>
 #include <fnmatch.h>
 #include <ftw.h>
@@ -544,6 +545,8 @@ void CTests::add_test(const char *name, json_value *obj)
     test_info_t testinfo;
     retrace_info_t retraceinfo;
 
+    std::string driver_str = "";
+
     for (unsigned int i = 0; i < obj->u.object.length; i++)
     {
         json_value *val = obj->u.object.values[i].value;
@@ -565,6 +568,12 @@ void CTests::add_test(const char *name, json_value *obj)
                 retraceinfo.trim_frame_count = val->u.integer;
             else
                 errorf("ERROR: Unknown object '%s'\n", objname.c_str());
+        }
+        else if ((val->type == json_string) && objname == "driver")
+        {
+            // Check for nvidia, amd, or intel here.
+            driver_str = "(" + std::string(val->u.string.ptr, val->u.string.length) + ")";
+            std::transform(driver_str.begin(), driver_str.end(), driver_str.begin(), ::toupper);
         }
         else if ((val->type == json_array) && (objname == "trace_files"))
         {
@@ -612,12 +621,12 @@ void CTests::add_test(const char *name, json_value *obj)
 
                             if (m_listtests)
                             {
-                                printf("%d) %s w:%d h:%d trim_start:%d trim_count:%d threshold:%d skip:%d %s\n",
+                                printf("%d) %s w:%d h:%d trim_start:%d trim_count:%d threshold:%d skip:%d %s %s\n",
                                        m_testid, testinfo.name.c_str(),
                                        retraceinfo.window_width, retraceinfo.window_height,
                                        retraceinfo.trim_frame_start, retraceinfo.trim_frame_count,
                                        retraceinfo.comparison_sum_threshold, retraceinfo.comparison_frames_to_skip,
-                                       retraceinfo.tracefile.c_str());
+                                       retraceinfo.tracefile.c_str(), driver_str.c_str());
 
                                 if (m_verbose)
                                 {
@@ -854,7 +863,7 @@ bool CTests::check_command(test_info_t *testinfo)
 static volatile int g_ctrlc_hit = 0;
 static void ctrlc_handler(int s)
 {
-    printf("\nStopping tests (caught signal %d).\n",s);
+    printf("\nStopping tests (caught signal %d).\n", s);
     g_ctrlc_hit = 1;
 }
 
@@ -865,6 +874,8 @@ void CTests::exec_tests(unsigned int jobs)
 {
     size_t nextjob = 0;
     std::vector<test_info_t *> joblist;
+
+    setenv("VOGL_BREAK_ON_ASSERT", "1", 0);
 
     // Default to 4 jobs if nothing was specified.
     if (jobs < 1)
