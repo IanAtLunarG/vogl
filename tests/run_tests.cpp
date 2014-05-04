@@ -32,14 +32,17 @@
 #include <signal.h>
 #include <libgen.h>
 #include <argp.h>
+#include <fnmatch.h>
+#include <ftw.h>
+#include <termios.h>
 #include <sys/utsname.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/ioctl.h>
+
 #include <string>
 #include <algorithm>
 #include <vector>
-#include <fnmatch.h>
-#include <ftw.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 
 #include "../external/json-parser/json.c"
 
@@ -867,6 +870,41 @@ static void ctrlc_handler(int s)
     g_ctrlc_hit = 1;
 }
 
+static int vogl_getch()
+{
+    struct termios oldt, newt;
+    int ch;
+    tcgetattr(STDIN_FILENO, &oldt);
+    newt = oldt;
+    newt.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+    ch = getchar();
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+    return ch;
+}
+
+// See http://www.flipcode.com/archives/_kbhit_for_Linux.shtml
+static int vogl_kbhit()
+{
+    static const int STDIN = 0;
+    static bool initialized = false;
+
+    if (!initialized)
+    {
+        // Use termios to turn off line buffering
+        termios term;
+        tcgetattr(STDIN, &term);
+        term.c_lflag &= ~ICANON;
+        tcsetattr(STDIN, TCSANOW, &term);
+        setbuf(stdin, NULL);
+        initialized = true;
+    }
+
+    int bytesWaiting;
+    ioctl(STDIN, FIONREAD, &bytesWaiting);
+    return bytesWaiting;
+}
+
 //----------------------------------------------------------------------------------------------------------------------
 // Execute all tests read from json files.
 //----------------------------------------------------------------------------------------------------------------------
@@ -887,7 +925,7 @@ void CTests::exec_tests(unsigned int jobs)
     {
         std::string banner1(78, '#');
         printf("\n%s\n", banner1.c_str());
-        printf("Executing tests. (Jobs:%u)\n", jobs);
+        printf("Executing tests. Jobs:%u. S:Status, Q:Quit.\n", jobs);
         printf("%s\n", banner1.c_str());
     }
 
@@ -934,6 +972,32 @@ void CTests::exec_tests(unsigned int jobs)
                 index++;
             }
         }
+
+        if (vogl_kbhit())
+        {
+            int ch = vogl_getch();
+
+            if (ch == 'q' || ch == 'Q')
+            {
+                g_ctrlc_hit = true;
+            }
+            else if (ch == 's' || ch == 'S')
+            {
+                printf("\nStatus:\n");
+                for (size_t i = 0; i < joblist.size(); i++)
+                {
+                    test_info_t *testinfo = joblist[i];
+                    test_info_t::command_info_t &commandinfo = testinfo->command_infos[testinfo->icommand];
+
+
+                    float time = time_to_sec(get_time() - commandinfo.time0);
+                    printf("  %s %.2fs\n", testinfo->name.c_str(), time);
+                }
+                printf("\n");
+            }
+        }
+
+        usleep(1000);
     }
 
     // Restore old signal handler.
