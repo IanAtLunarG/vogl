@@ -232,7 +232,16 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
         break;
 
     case '?':
-        argp_state_help(state, stderr, ARGP_HELP_LONG | ARGP_HELP_EXIT_OK);
+        argp_state_help(state, stderr, ARGP_HELP_LONG);
+
+        printf("\n");
+        printf("Examples:\n");
+        printf("  ./run_tests.sh -p \"*vogltest*\" --list ; List all vogl core tests.\n");
+        printf("  ./run_tests.sh -p \"*vogltest32*\" -j 15 ; Run all 32-bit vogl core tests using 15 cores.\n");
+        printf("  ./run_tests.sh -p \"*vogltest32*bigint128*\" ; Run 32-bit bigint128 test.\n");
+        printf("  ./run_tests.sh -p \"*gl-330-sampler-object32.trace*\" ; Run gl-330-sampler-object trace tests.\n");
+        printf("  ./run_tests.sh --valgrind -p \"*gl-330-sampler-object32.trace*\" ; Run gl-330-sampler-object trace tests under valgrind.\n");
+        exit(0);
         break;
 
     case 'v':
@@ -734,43 +743,48 @@ void CTests::add_voglcore_tests()
 
     test_info_t testinfo;
 
-    for (size_t i = 0; i < sizeof(s_tests) / sizeof(s_tests[0]); i++)
+    for (int bitness = 0; bitness < 2; bitness++)
     {
-        test_info_t::command_info_t cmdinfo;
+        const std::string voglcoretest = bitness ? m_voglcoretest64 : m_voglcoretest32;
 
-        testinfo.name = s_tests[i];
-        testinfo.testid = m_testid++;
-
-        cmdinfo.command = m_voglcoretest64 + " --test " + s_tests[i];
-
-        bool add = true;
-        if (m_test_patterns.size())
+        for (size_t i = 0; i < sizeof(s_tests) / sizeof(s_tests[0]); i++)
         {
-            add = false;
+            test_info_t::command_info_t cmdinfo;
 
-            // Check if any part of the command line matches the pattern string.
-            for (size_t p = 0; p < m_test_patterns.size(); p++)
+            testinfo.name = s_tests[i];
+            testinfo.testid = m_testid++;
+
+            cmdinfo.command = voglcoretest + " --test " + s_tests[i];
+
+            bool add = true;
+            if (m_test_patterns.size())
             {
-                int ret = fnmatch(m_test_patterns[p].c_str(), cmdinfo.command.c_str(), FNM_NOESCAPE);
-                if (!ret)
+                add = false;
+
+                // Check if any part of the command line matches the pattern string.
+                for (size_t p = 0; p < m_test_patterns.size(); p++)
                 {
-                    add = true;
-                    break;
+                    int ret = fnmatch(m_test_patterns[p].c_str(), cmdinfo.command.c_str(), FNM_NOESCAPE);
+                    if (!ret)
+                    {
+                        add = true;
+                        break;
+                    }
                 }
             }
-        }
 
-        if (add)
-        {
-            testinfo.command_infos.clear();
-            testinfo.command_infos.push_back(cmdinfo);
-
-            // Add this test trace file.
-            m_testinfos.push_back(testinfo);
-
-            if (m_listtests)
+            if (add)
             {
-                printf("%d) %s\n", m_testid, cmdinfo.command.c_str());
+                testinfo.command_infos.clear();
+                testinfo.command_infos.push_back(cmdinfo);
+
+                // Add this test trace file.
+                m_testinfos.push_back(testinfo);
+
+                if (m_listtests)
+                {
+                    printf("%d) %s\n", m_testid, cmdinfo.command.c_str());
+                }
             }
         }
     }
