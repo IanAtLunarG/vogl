@@ -49,6 +49,7 @@
 #define F_VERBOSE   0x00000001
 #define F_LISTTESTS 0x00000002
 #define F_DRYRUN    0x00000004
+#define F_VALGRIND  0x00000008
 
 //----------------------------------------------------------------------------------------------------------------------
 // Command line arguments.
@@ -176,6 +177,8 @@ private:
     std::string m_voglcoretest32;
     std::string m_voglcoretest64;
 
+    std::string m_valgrind;
+
     // Array of tests.
     std::vector<test_info_t> m_testinfos;
 };
@@ -207,43 +210,46 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 
     switch (key)
     {
-        case 'f':
-        case 0:
-            if (arg && arg[0])
-                arguments->filenames.push_back(arg);
-            break;
+    case 'f':
+    case 0:
+        if (arg && arg[0])
+            arguments->filenames.push_back(arg);
+        break;
 
-        case 'p':
-            if (arg && arg[0])
-                arguments->test_patterns.push_back(arg);
-            break;
+    case 'p':
+        if (arg && arg[0])
+            arguments->test_patterns.push_back(arg);
+        break;
 
-        case 'j':
-            if (arg && arg[0])
-                arguments->jobs = (unsigned int)atoi(arg);
-            break;
+    case 'j':
+        if (arg && arg[0])
+            arguments->jobs = (unsigned int)atoi(arg);
+        break;
 
-        case 'l':
-            if (arg && arg[0])
-                arguments->logfile = arg;
-            break;
+    case 'l':
+        if (arg && arg[0])
+            arguments->logfile = arg;
+        break;
 
-        case '?':
-            argp_state_help(state, stderr, ARGP_HELP_LONG | ARGP_HELP_EXIT_OK);
-            break;
+    case '?':
+        argp_state_help(state, stderr, ARGP_HELP_LONG | ARGP_HELP_EXIT_OK);
+        break;
 
-        case 'v':
-            arguments->flags |= F_VERBOSE;
-            break;
-        case 't':
-            arguments->flags |= (F_LISTTESTS | F_DRYRUN);
-            break;
-        case 'y':
-            arguments->flags |= F_DRYRUN;
-            break;
-        case 'd':
-            arguments->vogl_trace_dir = arg;
-            break;
+    case 'v':
+        arguments->flags |= F_VERBOSE;
+        break;
+    case 't':
+        arguments->flags |= (F_LISTTESTS | F_DRYRUN);
+        break;
+    case 'y':
+        arguments->flags |= F_DRYRUN;
+        break;
+    case 'g':
+        arguments->flags |= F_VALGRIND;
+        break;
+    case 'd':
+        arguments->vogl_trace_dir = arg;
+        break;
     }
     return 0;
 }
@@ -442,6 +448,11 @@ void CTests::init(const arguments_t &args)
     m_voglcoretest32 = args.vogl_trace_dir + "/vogltest32";
     m_voglcoretest64 = args.vogl_trace_dir + "/vogltest64";
 
+    if (args.flags & F_VALGRIND)
+    {
+        m_valgrind = "valgrind --tool=memcheck --leak-check=full --error-limit=no --trace-children=yes --time-stamp=yes -- ";
+    }
+
     printf("\nUsing:\n");
     printf("  %s\n", m_libvogltrace32.c_str());
     printf("  %s\n", m_voglreplay32.c_str());
@@ -450,6 +461,21 @@ void CTests::init(const arguments_t &args)
     printf("  %s\n", m_voglcoretest32.c_str());
     printf("  %s\n", m_voglcoretest64.c_str());
     printf("\n");
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Write a file.
+//----------------------------------------------------------------------------------------------------------------------
+static void write_file_contents(const char *filename, std::string data)
+{
+    FILE *fp = fopen(filename, "wb");
+    if (fp)
+    {
+        size_t ret = fwrite(data.c_str(), 1, data.size(), fp);
+        if (ret != data.size())
+            printf("WARNING: Writing %s failed: %s\n", filename, strerror(errno));
+        fclose(fp);
+    }
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -476,8 +502,6 @@ void CTests::setup_test_commands(const char *name, test_info_t &testinfo, const 
     std::string compare_ignore_frames = string_format(" -compare_ignore_frames %u", retraceinfo.comparison_frames_to_skip);
     std::string replayapp = strstr(retraceinfo.tracefile.c_str(), ".trace") ? m_glretrace32 : m_voglreplay32_stable;
 
-    //$ TODO mikesart: launch this stuff with valgrind?
-
     std::string vogl_cmd_line = "VOGL_CMD_LINE=\"";
     vogl_cmd_line += "--vogl_tracefile" + vogl_trace_file + " --vogl_dump_backbuffer_hashes" + trace_hash_file + trace_sum_arg;
     vogl_cmd_line += "\" ";
@@ -493,6 +517,9 @@ void CTests::setup_test_commands(const char *name, test_info_t &testinfo, const 
     test_info_t::command_info_t cmdinfo;
 
     cmdinfo.command = vogl_cmd_line + ld_preload + " " + replayapp + " --benchmark " + retraceinfo.tracefile;
+    std::string bash_script_fname = tempdir + "/" + base + ".sh";
+    write_file_contents(bash_script_fname.c_str(), cmdinfo.command + "\n");
+    cmdinfo.command = "sh " + bash_script_fname;
     testinfo.command_infos.push_back(cmdinfo);
 
     cmdinfo.command = m_voglreplay32 + vogl_trace_file + sum_arg + " -dump_backbuffer_hashes" + replay_hash_file +
@@ -768,13 +795,15 @@ bool CTests::check_command(test_info_t *testinfo)
     {
         commandinfo.launched = 1;
 
+        std::string command = m_valgrind + commandinfo.command;
+
         if (!m_listtests)
         {
             printf("Launching #%d (%lu/%lu): '%s'\n", testinfo->testid, testinfo->icommand,
                    testinfo->command_infos.size() - 1, testinfo->name.c_str());
             if (m_verbose)
             {
-                printf("  %s\n", commandinfo.command.c_str());
+                printf("  %s\n", command.c_str());
             }
         }
 
@@ -784,7 +813,7 @@ bool CTests::check_command(test_info_t *testinfo)
 
             commandinfo.time0 = get_time();
 
-            testinfo->file = popen((commandinfo.command + " 2>&1").c_str(), "r");
+            testinfo->file = popen((command + " 2>&1").c_str(), "r");
             if (!testinfo->file)
             {
                 // Popen error.
@@ -1081,6 +1110,7 @@ int main(int argc, char *argv[])
         { "vogltracedir",'d', "DIR",     0,                   "libvogltrace32.so directory (defaults to ../vogl_build/bin).", 0 },
         { "logfile",     'l', "LOGFILE", 0,                   "Logfile name.", 1 },
         { "list",        't', 0,         0,                   "List tests in file.", 1 },
+        { "valgrind",    'g', 0,         0,                   "Run tests under valgrind.", 1 },
         { "pattern",     'p', "PATTERN", 0,                   "Test name pattern.", 1 },
         { "jobs",        'j', "JOBS",    0,                   "Allow N test jobs to run at once.", 1 },
         { "dry-run",     'y', 0,         0,                   "Don't execute commands.", 2 },
