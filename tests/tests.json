@@ -149,7 +149,7 @@
     "trim_frame_start": 1500,
     "trim_frame_count": 250,
     "trace_files": [
-        "traces/MetroLL.trace"
+        "traces/metroLL.bin"
     ]
 },
 
