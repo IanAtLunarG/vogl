@@ -44,12 +44,16 @@
 #include <algorithm>
 #include <vector>
 
+#include <GL/gl.h>
+#include <GL/glx.h>
+
 #include "../external/json-parser/json.c"
 
-#define F_VERBOSE   0x00000001
-#define F_LISTTESTS 0x00000002
-#define F_DRYRUN    0x00000004
-#define F_VALGRIND  0x00000008
+#define F_VERBOSE        0x00000001
+#define F_LISTTESTS      0x00000002
+#define F_DRYRUN         0x00000004
+#define F_VALGRIND       0x00000008
+#define F_NODRIVERCHECK  0x00000008
 
 //----------------------------------------------------------------------------------------------------------------------
 // Command line arguments.
@@ -121,6 +125,17 @@ struct retrace_info_t
     std::string tracefile; 
 };
 
+struct gl_info_t
+{
+    int glx_major; // GLX Version.
+    int glx_minor; //
+    std::string gl_version; // glGetString(GL_VERSION)
+    std::string gl_renderer; // glGetString(GL_RENDERER)
+
+    std::string error_str;
+};
+static bool get_glinfo(gl_info_t &gl_info);
+
 //----------------------------------------------------------------------------------------------------------------------
 // Main test class.
 //----------------------------------------------------------------------------------------------------------------------
@@ -129,6 +144,8 @@ class CTests
 public:
     CTests() : m_verbose(false),
                m_dryrun(false),
+               m_listtests(false),
+               m_nodrivercheck(false),
                m_command_errors(0),
                m_commands_launched(0),
                m_testid(0) {}
@@ -157,6 +174,7 @@ private:
     bool m_verbose;
     bool m_dryrun;
     bool m_listtests;
+    bool m_nodrivercheck;
 
     int m_command_errors;
     int m_commands_launched;
@@ -178,6 +196,8 @@ private:
     std::string m_voglcoretest64;
 
     std::string m_valgrind;
+
+    gl_info_t m_glinfo;
 
     // Array of tests.
     std::vector<test_info_t> m_testinfos;
@@ -255,6 +275,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
         break;
     case 'g':
         arguments->flags |= F_VALGRIND;
+        break;
+    case 'n':
+        arguments->flags |= F_NODRIVERCHECK;
         break;
     case 'd':
         arguments->vogl_trace_dir = arg;
@@ -431,6 +454,7 @@ void CTests::init(const arguments_t &args)
     m_verbose = !!(args.flags & F_VERBOSE);
     m_dryrun = !!(args.flags & F_DRYRUN);
     m_listtests = !!(args.flags & F_LISTTESTS);
+    m_nodrivercheck = !!(args.flags & F_NODRIVERCHECK);
 
     m_test_patterns = args.test_patterns;
 
@@ -461,6 +485,12 @@ void CTests::init(const arguments_t &args)
     {
         m_valgrind = "valgrind --tool=memcheck --leak-check=full --error-limit=no --trace-children=yes --time-stamp=yes -- ";
     }
+
+    printf("\n");
+    get_glinfo(m_glinfo);
+    if (m_glinfo.error_str.size())
+        printf("glinfo: %s\n", m_glinfo.error_str.c_str());
+    printf("GL Info: GLX: %u.%d '%s' '%s'\n", m_glinfo.glx_major, m_glinfo.glx_minor, m_glinfo.gl_version.c_str(), m_glinfo.gl_renderer.c_str());
 
     printf("\nUsing:\n");
     printf("  %s\n", m_libvogltrace32.c_str());
@@ -583,8 +613,9 @@ void CTests::add_test(const char *name, json_value *obj)
 
     test_info_t testinfo;
     retrace_info_t retraceinfo;
-
     std::string driver_str = "";
+
+    std::transform(m_glinfo.gl_version.begin(), m_glinfo.gl_version.end(), m_glinfo.gl_version.begin(), ::toupper);
 
     for (unsigned int i = 0; i < obj->u.object.length; i++)
     {
@@ -611,7 +642,7 @@ void CTests::add_test(const char *name, json_value *obj)
         else if ((val->type == json_string) && objname == "driver")
         {
             // Check for nvidia, amd, or intel here.
-            driver_str = "(" + std::string(val->u.string.ptr, val->u.string.length) + ")";
+            driver_str = std::string(val->u.string.ptr, val->u.string.length);
             std::transform(driver_str.begin(), driver_str.end(), driver_str.begin(), ::toupper);
         }
         else if ((val->type == json_array) && (objname == "trace_files"))
@@ -639,6 +670,15 @@ void CTests::add_test(const char *name, json_value *obj)
                                 add = true;
                                 break;
                             }
+                        }
+                    }
+
+                    if (add && !m_nodrivercheck && driver_str.size() && m_glinfo.gl_version.size())
+                    {
+                        if (!strstr(m_glinfo.gl_version.c_str(), driver_str.c_str()))
+                        {
+                            printf("WARNING: Skipping '%s' due to driver check. (%s only).\n", filename, driver_str.c_str());
+                            add = false;
                         }
                     }
 
@@ -746,12 +786,13 @@ void CTests::add_voglcore_tests()
     for (int bitness = 0; bitness < 2; bitness++)
     {
         const std::string voglcoretest = bitness ? m_voglcoretest64 : m_voglcoretest32;
+        const std::string bitness_str = bitness ? " amd64" : " i386";
 
         for (size_t i = 0; i < sizeof(s_tests) / sizeof(s_tests[0]); i++)
         {
             test_info_t::command_info_t cmdinfo;
 
-            testinfo.name = s_tests[i];
+            testinfo.name = s_tests[i] + bitness_str;
             testinfo.testid = m_testid++;
 
             cmdinfo.command = voglcoretest + " --test " + s_tests[i];
@@ -1114,22 +1155,133 @@ void CTests::spew_results(FILE *f, char *argv[])
 }
 
 //----------------------------------------------------------------------------------------------------------------------
+// Retrieve OpenGL version, renderer strings.
+//----------------------------------------------------------------------------------------------------------------------
+static bool get_glinfo(gl_info_t &gl_info)
+{
+    gl_info.glx_major = 0;
+    gl_info.glx_minor = 0;
+    gl_info.gl_version = "";
+    gl_info.gl_renderer = "";
+    gl_info.error_str = "";
+
+    Display *dpy = XOpenDisplay(NULL);
+    if (!dpy)
+    {
+        gl_info.error_str = "ERROR: XOpenDisplay() failed.";
+    }
+    else
+    {
+        int notused;
+
+        // Make sure GLX is available.
+        if (!XQueryExtension(dpy, "GLX", &notused, &notused, &notused))
+        {
+            gl_info.error_str = "ERROR: XQueryExtensions() failed.";
+        }
+        else if (!glXQueryVersion(dpy, &gl_info.glx_major, &gl_info.glx_minor))
+        {
+            gl_info.error_str = "ERROR: glXQueryVersion() failed.";
+        }
+
+        if (!gl_info.error_str.size())
+        {
+            static int attribs0[] = { None };
+            static int attribs1[] = { GLX_RGBA, None };
+
+            int screen = DefaultScreen(dpy);
+            XVisualInfo *visinfo = glXChooseVisual(dpy, screen, attribs0);
+            if (!visinfo)
+                visinfo = glXChooseVisual(dpy, screen, attribs1);
+
+            if (!visinfo)
+            {
+                gl_info.error_str = "ERROR: glXChooseVisual() failed.";
+            }
+            else
+            {
+                GLXContext ctx = glXCreateContext(dpy, visinfo, 0, GL_TRUE);
+
+                if (!ctx)
+                { 
+                    gl_info.error_str = "ERROR: glXCreateContext() failed.";
+                }
+                else
+                {
+                    Window root = RootWindow(dpy, visinfo->screen);
+                    Colormap colormap = XCreateColormap(dpy, root, visinfo->visual, AllocNone);
+
+                    if (!colormap)
+                    {
+                        gl_info.error_str = "ERROR: XCreateColormap() failed.";
+                    }
+                    else
+                    {
+                        XSetWindowAttributes attr;
+                        attr.colormap = colormap;
+                        attr.border_pixel = 0;
+                        attr.event_mask = StructureNotifyMask;
+
+                        Window win = XCreateWindow(dpy, root, 0, 0, 1, 1, 0, visinfo->depth,
+                                                   InputOutput, visinfo->visual,
+                                                   CWBorderPixel | CWColormap | CWEventMask,
+                                                   &attr);
+                        if (!win)
+                        {
+                            gl_info.error_str = "ERROR: XCreateWindow() failed.";
+                        }
+                        else
+                        {
+                            if (!glXMakeCurrent(dpy, win, ctx))
+                            {
+                                gl_info.error_str = "ERROR: glXMakeCurrent() failed.";
+                            }
+                            else
+                            {
+                                const char *string = (char *)glGetString(GL_VERSION);
+                                gl_info.gl_version = string ? string : "";
+
+                                string = (char *) glGetString(GL_RENDERER);
+                                gl_info.gl_renderer = string ? string : "";
+                            }
+
+                            XDestroyWindow(dpy, win);
+                        }
+
+                        XFreeColormap(dpy, colormap);
+                    }
+
+                    glXDestroyContext(dpy, ctx);
+                }
+
+                XFree(visinfo);
+            }
+        }
+
+        XCloseDisplay(dpy);
+    }
+    
+    return gl_info.error_str.size() == 0;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
 // main.
 //----------------------------------------------------------------------------------------------------------------------
 int main(int argc, char *argv[])
 {
     static struct argp_option options[] =
     {
-        { "filename",    'f', "FILE",    OPTION_ARG_OPTIONAL, "Test filename (defaults to tests.json).", 0 },
-        { "vogltracedir",'d', "DIR",     0,                   "libvogltrace32.so directory (defaults to ../vogl_build/bin).", 0 },
-        { "logfile",     'l', "LOGFILE", 0,                   "Logfile name.", 1 },
-        { "list",        't', 0,         0,                   "List tests in file.", 1 },
-        { "valgrind",    'g', 0,         0,                   "Run tests under valgrind.", 1 },
-        { "pattern",     'p', "PATTERN", 0,                   "Test name pattern.", 1 },
-        { "jobs",        'j', "JOBS",    0,                   "Allow N test jobs to run at once.", 1 },
-        { "dry-run",     'y', 0,         0,                   "Don't execute commands.", 2 },
-        { "verbose",     'v', 0,         0,                   "Produce verbose output.", 2 },
-        { "help",        '?', 0,         0,                   "Give this help message.", -1 },
+        { "filename",      'f', "FILE",    OPTION_ARG_OPTIONAL, "Test filename (defaults to tests.json).", 0 },
+        { "vogltracedir",  'd', "DIR",     0,                   "libvogltrace32.so directory (defaults to ../vogl_build/bin).", 0 },
+        { "logfile",       'l', "LOGFILE", 0,                   "Logfile name.", 1 },
+        { "list",          't', 0,         0,                   "List tests in file.", 1 },
+        { "valgrind",      'g', 0,         0,                   "Run tests under valgrind.", 1 },
+        { "nodrivercheck", 'n', 0,         0,                   "Don't check driver string.", 1 },
+        { "pattern",       'p', "PATTERN", 0,                   "Test name pattern.", 1 },
+        { "jobs",          'j', "JOBS",    0,                   "Allow N test jobs to run at once.", 1 },
+        { "dry-run",       'y', 0,         0,                   "Don't execute commands.", 2 },
+        { "verbose",       'v', 0,         0,                   "Produce verbose output.", 2 },
+        { "help",          '?', 0,         0,                   "Give this help message.", -1 },
         { 0 }
     };
 

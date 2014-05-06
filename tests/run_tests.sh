@@ -1,6 +1,8 @@
 #!/bin/sh
 
 # Source file to build and run.
+
+SRCFILE_LIBS="-lGL -lX11 -pthread"
 SRCFILE=run_tests.cpp
 
 # Include the compile_and_run_func function.

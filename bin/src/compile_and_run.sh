@@ -44,7 +44,8 @@ compile_and_run_func()
         echo "$(tput setaf 3)Compiling ${cfile}...$(tput sgr0)"
         # remove and compile our executable
         rm -f ${exe}
-        g++ "$cfile" -g -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -o ${exe}
+        SRCFILE_LIBS=${SRCFILE_LIBS:=}
+        g++ "$cfile" -g -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers ${SRCFILE_LIBS} -o ${exe}
     fi
 
     echo ${exe} "$@"
