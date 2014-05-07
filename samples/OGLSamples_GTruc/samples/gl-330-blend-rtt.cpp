@@ -284,12 +284,12 @@ bool initBlend()
 	glEnablei(GL_BLEND, 0);
 	glEnablei(GL_BLEND, 1);
 	glEnablei(GL_BLEND, 2);
-	glEnablei(GL_BLEND, 3);
+	glDisablei(GL_BLEND, 3);
 
 	glColorMaski(0, GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
 	glColorMaski(1, GL_TRUE, GL_FALSE, GL_FALSE, GL_FALSE);
 	glColorMaski(2, GL_TRUE, GL_FALSE, GL_FALSE, GL_FALSE);
-	glColorMaski(3, GL_TRUE, GL_FALSE, GL_FALSE, GL_FALSE);
+	glColorMaski(3, GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
 	return glf::checkError("initBlend");
 }
@@ -349,7 +349,8 @@ void display()
 
 		glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
 		glViewport(0, 0, FRAMEBUFFER_SIZE.x >> 1, FRAMEBUFFER_SIZE.y >> 1);
-		glClearBufferfv(GL_COLOR, 0, &glm::vec4(1.0f)[0]);
+		for (int i = 0; i < 3; i++)
+            glClearBufferfv(GL_COLOR, i, &glm::vec4(1.0f)[0]);
 
 		glUseProgram(ProgramNameMultiple);
 		glUniformMatrix4fv(UniformMVPMultiple, 1, GL_FALSE, &MVP[0][0]);
