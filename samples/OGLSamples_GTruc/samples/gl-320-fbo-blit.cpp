@@ -308,6 +308,7 @@ void display()
 	int const Tile = 4;
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, FramebufferName[framebuffer::RENDER]);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, FramebufferName[framebuffer::RESOLVE]);
+    glClearBufferfv(GL_COLOR, 0, &glm::vec4(1.0f, 0.0f, 1.0f, 1.0f)[0]);
 
 	for(int j = 0; j < Tile; ++j)
 	for(int i = 0; i < Tile; ++i)
@@ -322,6 +323,7 @@ void display()
 			FRAMEBUFFER_SIZE.y / Tile * (j + 1) - Border, 
 			GL_COLOR_BUFFER_BIT, GL_LINEAR);
 	}
+   
 
 	// Pass 2
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);

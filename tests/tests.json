@@ -22,7 +22,6 @@
         "traces/gl-320-draw-multiple32.trace",
         "traces/gl-320-draw-without-vertex-attrib32.trace",
         "traces/gl-320-fbo32.trace",
-        "traces/gl-320-fbo-blit32.trace",
         "traces/gl-320-fbo-depth32.trace",
         "traces/gl-320-fbo-depth-multisample32.trace",
         "traces/gl-320-fbo-layered32.trace"
@@ -89,6 +88,18 @@
         "traces/gl-300-test-alpha32.trace",
         "traces/gl-320-buffer-uniform32.trace",
         "traces/gl-320-buffer-uniform-shared32.trace"
+    ]
+},
+
+"g-truc4": {
+    "window_width": 640,
+    "window_height": 480,
+    "comparison_sum_threshold": 0,
+    "comparison_frames_to_skip": 2,
+    "trim_frame_start": 100,
+    "trim_frame_count": 100,
+    "trace_files": [
+        "traces/gl-320-fbo-blit32.trace",
     ]
 },
 
