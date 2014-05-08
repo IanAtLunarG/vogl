@@ -47,7 +47,14 @@ while getopts "g8cq" optname
 ARCH=$(uname -i)
 SCRIPT=$(readlink -f "$0")
 SCRIPTPATH=$(dirname "$SCRIPT")
-CLANG34ROOT=$(readlink -f "${SCRIPTPATH}/../vogl_extbuild/${ARCH}/clang34_rev1/build")
+
+# If a vogl_extbuild directory exists on same level as vogl_chroot, use that.
+if [ -d "${SCRIPTPATH}/../../vogl_extbuild" ]; then
+    EXTBUILDDIR="${SCRIPTPATH}/../../vogl_extbuild"
+else
+    EXTBUILDDIR="${SCRIPTPATH}/../vogl_extbuild"
+fi
+CLANG34ROOT=$(readlink -f "${EXTBUILDDIR}/${ARCH}/clang34_rev1/build")
 
 if [ "$QUERY_ONLY" == "0" ]; then
     # Set which compiler to use

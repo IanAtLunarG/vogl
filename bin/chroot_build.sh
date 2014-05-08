@@ -76,7 +76,7 @@ build_chroot()
     if [ -f /etc/apt/apt.conf ]; then sudo cp "/etc/apt/apt.conf" "/var/chroots/${CHROOT_NAME}/etc/apt"; fi  
 
     # Make sure that vogl_extbuild exists so schroot_configure.sh doesn't create it as root.
-    mkdir -p "${SCRIPTPATH}/../vogl_extbuild"
+    [ -d "${SCRIPTPATH}/../../vogl_extbuild" ] || mkdir -p "${SCRIPTPATH}/../vogl_extbuild"
 
     echo -e "\n${Color_On}Running chroot_configure.sh --packages...${Color_Off}" 
     schroot --chroot ${CHROOT_NAME} -d ${SCRIPTPATH} --user root -- ./chroot_configure.sh --packages

@@ -21,7 +21,12 @@ fi
 
 SCRIPT=$(readlink -f "$0")
 SCRIPTPATH=$(dirname "$SCRIPT")
-EXTBUILDDIR=$(readlink -f "${SCRIPTPATH}/../vogl_extbuild")
+# If a vogl_extbuild directory exists on same level as vogl_chroot, use that.
+if [ -d "${SCRIPTPATH}/../../vogl_extbuild" ]; then
+    EXTBUILDDIR=$(readlink -f "${SCRIPTPATH}/../../vogl_extbuild")
+else
+    EXTBUILDDIR=$(readlink -f "${SCRIPTPATH}/../vogl_extbuild")
+fi
 mkdir -p ${EXTBUILDDIR}
 
 DO_PACKAGES=
