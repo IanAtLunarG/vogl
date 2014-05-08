@@ -146,6 +146,7 @@
     "comparison_frames_to_skip": 0,
     "trim_frame_start": 1500,
     "trim_frame_count": 250,
+    "driver": "nvidia",
     "trace_files": [
         "traces/metroLL.bin"
     ]
