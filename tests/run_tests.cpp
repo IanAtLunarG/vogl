@@ -39,6 +39,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
+#include <sys/sysinfo.h>
 
 #include <string>
 #include <algorithm>
@@ -76,7 +77,7 @@ struct arguments_t
 //----------------------------------------------------------------------------------------------------------------------
 struct test_info_t
 {
-    test_info_t() : testid(-1), file(NULL), fileid(0), icommand(0) {}
+    test_info_t() : testid(-1), file(NULL), fileid(0), cpu_only_test(false), icommand(0) {}
 
     int testid;
     std::string name;      // Something like "g-truc3:gl-320-buffer-uniform32.trace".
@@ -84,6 +85,8 @@ struct test_info_t
     // popen info
     FILE *file; // Pipe to our launched command.
     int fileid; // Pipe file id.
+
+    bool cpu_only_test;
 
     struct command_info_t
     {
@@ -783,6 +786,8 @@ void CTests::add_voglcore_tests()
 
     test_info_t testinfo;
 
+    testinfo.cpu_only_test = true;
+
     for (int bitness = 0; bitness < 2; bitness++)
     {
         const std::string voglcoretest = bitness ? m_voglcoretest64 : m_voglcoretest32;
@@ -999,11 +1004,23 @@ void CTests::exec_tests(unsigned int jobs)
 
     setenv("VOGL_BREAK_ON_ASSERT", "1", 0);
 
+    // Assume at least 4 jobs are possible.
+    uint nprocs = std::max<uint>(4, get_nprocs());
+
     // Default to 4 jobs if nothing was specified.
     if (jobs < 1)
         jobs = 4;
-    if (jobs > m_testinfos.size())
-        jobs = m_testinfos.size();
+
+    jobs = std::min<uint>(jobs, m_testinfos.size());
+
+    // Add jobs to our joblist.
+    for (size_t i = 0; i < jobs; i++)
+    {
+        if ((jobs > 1) && m_testinfos[nextjob].cpu_only_test)
+            jobs = std::min<uint>(m_testinfos.size(), nprocs);
+
+        joblist.push_back(&m_testinfos[nextjob++]);
+    }
 
     if (!m_listtests)
     {
@@ -1011,12 +1028,6 @@ void CTests::exec_tests(unsigned int jobs)
         printf("\n%s\n", banner1.c_str());
         printf("Executing tests. Jobs:%u. S:Status, Q:Quit.\n", jobs);
         printf("%s\n", banner1.c_str());
-    }
-
-    // Add jobs to our joblist.
-    for (size_t i = 0; i < jobs; i++)
-    {
-        joblist.push_back(&m_testinfos[nextjob++]);
     }
 
     // Set up Ctrl+C Signal handler.
@@ -1042,7 +1053,15 @@ void CTests::exec_tests(unsigned int jobs)
                 if (nextjob < m_testinfos.size())
                 {
                     // Job is done - replace this job with next job.
-                    joblist[index++] = &m_testinfos[nextjob++];
+                    test_info_t *testinfo = &m_testinfos[nextjob++];
+                    joblist[index++] = testinfo;
+
+                    if ((jobs > 1) && testinfo->cpu_only_test)
+                    {
+                        // Add all the rest of the tests up to count of CPUs.
+                        while ((nextjob < m_testinfos.size()) && (joblist.size() < nprocs))
+                            joblist.push_back(&m_testinfos[nextjob++]);
+                    }
                 }
                 else
                 {
