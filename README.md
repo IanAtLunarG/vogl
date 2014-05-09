@@ -4,6 +4,7 @@ vogl_chroot
 ## Enlist ##
 
 ```
+mkdir vogl_extbuild  ; place chroot temp files here (otherwise goes in vogl_chroot/vogl_extbuild)
 git clone https://bitbucket.org/raddebugger/vogl_chroot.git  
 cd vogl_chroot  
 git clone https://github.com/ValveSoftware/vogl.git  
