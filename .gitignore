@@ -22,3 +22,6 @@ tests/traces/p1_full.trace
 tests/traces/quake2.trace
 tests/traces/quake3.x86.trace
 tests/traces/tf2.trace
+tests/traces/Rome2Battle.trace
+tests/traces/metroLL.bin
+
