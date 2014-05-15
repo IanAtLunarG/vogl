@@ -371,14 +371,14 @@ fi
 sudo ln -f -s ${SCRIPTPATH}/ninja /usr/local/bin
 
 #  Install and build clang 3.4
-REV=rev1
+REV=rev2
 DESTDIR=$BUILDDIR/clang34_${REV}
 banner_spew "Building ${DESTDIR}..."
 [ $FORCE_REBUILD_ALL -eq 1 ] && rm -rf "$DESTDIR"
 if [ ! -w "$DESTDIR/build/bin/clang" ]; then
   rm -rf "$DESTDIR"
-  mkdir -p "$DESTDIR/llvm-3.4" && tar -xvf ${EXTDIR}/clang34/llvm-3.4.src.tar.gz --strip=1 -C $_
-  mkdir -p "$DESTDIR/llvm-3.4/tools/clang" && tar -xvf ${EXTDIR}/clang34/clang-3.4.src.tar.gz --strip=1 -C $_
+  mkdir -p "$DESTDIR/llvm-3.4" && tar -xvf ${EXTDIR}/clang34/llvm-3.4.1.src.tar.gz --strip=1 -C $_
+  mkdir -p "$DESTDIR/llvm-3.4/tools/clang" && tar -xvf ${EXTDIR}/clang34/cfe-3.4.1.src.tar.gz --strip=1 -C $_
   mkdir -p "$DESTDIR/llvm-3.4/tools/clang/tools/extra" && tar -xvf ${EXTDIR}/clang34/clang-tools-extra-3.4.src.tar.gz --strip=1 -C $_
   mkdir -p "$DESTDIR/llvm-3.4/projects/compiler-rt" && tar -xvf ${EXTDIR}/clang34/compiler-rt-3.4.src.tar.gz --strip=1 -C $_
   mkdir -p "$DESTDIR/build" && cd $_
