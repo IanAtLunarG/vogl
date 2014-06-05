@@ -188,7 +188,7 @@ union double_conversion
 template <pxfmt_sized_format F> struct pxfmt_per_fmt_info { };
 
 #define FMT_INFO_BASE(F, ogl_fmt, ftype, itype, ncomps, bypp,           \
-                      needfp, norm, is_signed, pack,                    \
+                      needfp, norm, is_signed, pack, compr,             \
                       in0, in1, in2, in3,                               \
                       nbits0, nbits1, nbits2, nbits3,                   \
                       shift0, shift1, shift2, shift3)                   \
@@ -208,6 +208,7 @@ template <pxfmt_sized_format F> struct pxfmt_per_fmt_info { };
         static const bool m_is_normalized = norm;                       \
         static const bool m_is_signed = is_signed;                      \
         static const bool m_is_packed = pack;                           \
+        static const bool m_is_compressed = compr;                      \
                                                                         \
         /* The m_index[] members identify which "component index" */    \
         /* to use for the n'th component dealt with.  For example, */   \
@@ -258,7 +259,7 @@ template <pxfmt_sized_format F> struct pxfmt_per_fmt_info { };
                  shift0, shift1, shift2, shift3)                        \
                                                                         \
     FMT_INFO_BASE(F, ogl_fmt, ftype, itype, ncomps, bypp,               \
-                  needfp, norm, is_signed, pack,                        \
+                  needfp, norm, is_signed, pack, false,                 \
                   in0, in1, in2, in3,                                   \
                   nbits0, nbits1, nbits2, nbits3,                       \
                   shift0, shift1, shift2, shift3);                      \
@@ -274,12 +275,22 @@ template <pxfmt_sized_format F> struct pxfmt_per_fmt_info { };
                      sfp0, sfp1, sfp2, sfp3)                            \
                                                                         \
     FMT_INFO_BASE(F, ogl_fmt, ftype, itype, ncomps, bypp,               \
-                  true, false, is_signed, false,                        \
+                  true, false, is_signed, false, false,                 \
                   in0, in1, in2, in3,                                   \
                   nbits0, nbits1, nbits2, nbits3,                       \
                   shift0, shift1, shift2, shift3);                      \
     const pxfmt_small_fp pxfmt_per_fmt_info<F>::m_small_fp[] =          \
             {sfp0, sfp1, sfp2, sfp3};
+
+    // This variation is used for compressed texture formats:
+#define FMT_INFO_COMPRESSED(F, ogl_fmt, ncomps, is_signed)              \
+                                                                        \
+    FMT_INFO_BASE(F, ogl_fmt, uint32, double,        \
+                  ncomps, /*don't care*/1,                              \
+                  true, false, is_signed, /*don't care*/false, true,    \
+                  0, 0, 0, 0,    0, 0, 0, 0,    0, 0, 0, 0);            \
+    const pxfmt_small_fp pxfmt_per_fmt_info<F>::m_small_fp[] =          \
+        {NON_FP, NON_FP, NON_FP, NON_FP};
 
 
 
@@ -536,6 +547,9 @@ FMT_INFO(PXFMT_S32_FLOAT,GL_STENCIL_INDEX,   float,  uint32, 1, 4, false, false,
 FMT_INFO(PXFMT_D24_UNORM_S8_UINT,GL_DEPTH_STENCIL,uint32,double,2,4,true, false, false, false,  0, 1, -1, -1,    24,  8,  0,  0,   0, 0, 0, 0);
 FMT_INFO(PXFMT_D32_FLOAT_S8_UINT,GL_DEPTH_STENCIL,float, double,2,8,true, false, false, false,  0, 1, -1, -1,     0,  8,  0,  0,   0, 0, 0, 0);
 
+// ETC1/ETC2 compressed texture internalformats
+FMT_INFO_COMPRESSED(PXFMT_COMPRESSED_RGB8_ETC2,    GL_RGB, 3, false);
+
 
 
 /******************************************************************************
@@ -556,9 +570,12 @@ inline
 void get_pxfmt_info(const uint32 width, uint32 &pixel_stride,
                     uint32 &row_stride, bool &needs_fp_intermediate)
 {
-    pixel_stride = pxfmt_per_fmt_info<F>::m_bytes_per_pixel;
-    row_stride = ((pixel_stride * width) + 3) & 0xFFFFFFFC;
-    needs_fp_intermediate = pxfmt_per_fmt_info<F>::m_needs_fp_intermediate;
+    if (!pxfmt_per_fmt_info<F>::m_is_compressed)
+    {
+        pixel_stride = pxfmt_per_fmt_info<F>::m_bytes_per_pixel;
+        row_stride = ((pixel_stride * width) + 3) & 0xFFFFFFFC;
+        needs_fp_intermediate = pxfmt_per_fmt_info<F>::m_needs_fp_intermediate;
+    }
 }
 
 inline
@@ -2174,6 +2191,29 @@ pxfmt_sized_format validate_format_type_combo(const GLenum format,
     return PXFMT_INVALID;
 }
 
+
+
+/******************************************************************************
+ *
+ * The following is an externally-visible function of this library:
+ *
+ ******************************************************************************/
+
+// This function is used to get back a pxfmt_sized_format enum value for a
+// given OpenGL "internalformat" of a compressed texture.  If the format-type
+// combination isn't supported, PXFMT_INVALID is returned.
+pxfmt_sized_format validate_internal_format(const GLenum internalformat)
+{
+    switch (internalformat)
+    {
+    case GL_COMPRESSED_RGB8_ETC2:
+        return PXFMT_COMPRESSED_RGB8_ETC2;
+    default:
+        // If we get to here, this is an unsupported compressed-texture
+        // internalformat:
+        return PXFMT_INVALID;
+    }
+}
 
 
 /******************************************************************************

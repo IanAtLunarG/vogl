@@ -125,6 +125,7 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
+#ifdef OLD_CODE
     if (tex.is_compressed())
     {
         //get_ogl_internal_fmt()
@@ -138,6 +139,27 @@ int main(int argc, char **argv)
         vogl_error_printf("Unsupported KTX format/type: 0x%X 0x%X\n", tex.get_ogl_fmt(), tex.get_ogl_type());
         return EXIT_FAILURE;
     }
+#else  // OLD_CODE
+    pxfmt_sized_format src_pxfmt;
+    if (tex.is_compressed())
+    {
+        src_pxfmt = validate_internal_format(tex.get_ogl_internal_fmt());
+        if (src_pxfmt == PXFMT_INVALID)
+        {
+            vogl_error_printf("Unsupported KTX compressed format: 0x%X\n", tex.get_ogl_internal_fmt());
+            return EXIT_FAILURE;
+        }
+    }
+    else
+    {
+        src_pxfmt = validate_format_type_combo(tex.get_ogl_fmt(), tex.get_ogl_type());
+        if (src_pxfmt == PXFMT_INVALID)
+        {
+            vogl_error_printf("Unsupported KTX format/type: 0x%X 0x%X\n", tex.get_ogl_fmt(), tex.get_ogl_type());
+            return EXIT_FAILURE;
+        }
+    }
+#endif // OLD_CODE
 
     // TODO: This is a total work in progress!
     for (uint32_t array_index = 0; array_index < tex.get_array_size(); array_index++)

@@ -319,6 +319,9 @@ enum pxfmt_sized_format
 // GL_DEPTH_STENCIL
     PXFMT_D24_UNORM_S8_UINT,
     PXFMT_D32_FLOAT_S8_UINT,
+
+// ETC1/ETC2 compressed texture internalformats
+    PXFMT_COMPRESSED_RGB8_ETC2,
 };
 
 
@@ -327,6 +330,12 @@ enum pxfmt_sized_format
 // supported, PXFMT_INVALID is returned.
 pxfmt_sized_format validate_format_type_combo(const GLenum format,
                                               const GLenum type);
+
+
+// This function is used to get back a pxfmt_sized_format enum value for a
+// given OpenGL "internalformat" of a compressed texture.  If the format-type
+// combination isn't supported, PXFMT_INVALID is returned.
+pxfmt_sized_format validate_internal_format(const GLenum internalformat);
 
 
 // This function is used to obtain information about a given
