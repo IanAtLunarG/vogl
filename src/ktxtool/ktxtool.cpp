@@ -132,6 +132,7 @@ int main(int argc, char **argv)
                 tex.get_width(), tex.get_height(), tex.get_depth(),
                 tex.get_num_mips(), tex.get_num_faces(), tex.get_array_size());
 
+    pxfmt_sized_format src_pxfmt;
     if (tex.is_compressed())
     {
         vogl_printf("\t    InternalFormat=0x%04x, BaseInternalFormat=0x%04x,\n\t    "
@@ -139,16 +140,21 @@ int main(int argc, char **argv)
                     tex.get_ogl_internal_fmt(), tex.get_ogl_base_fmt(),
                     tex.get_block_dim(), tex.get_bytes_per_block());
 
-        //get_ogl_internal_fmt()
-        vogl_error_printf("Compressed KTX files are not supported because the pxfmt lib doesn't support compressed formats yet.\n");
-        return EXIT_FAILURE;
+        src_pxfmt = validate_internal_format(tex.get_ogl_internal_fmt());
+        if (src_pxfmt == PXFMT_INVALID)
+        {
+            vogl_error_printf("Unsupported KTX compressed format: 0x%X\n", tex.get_ogl_internal_fmt());
+            return EXIT_FAILURE;
+        }
     }
-
-    pxfmt_sized_format src_pxfmt = validate_format_type_combo(tex.get_ogl_fmt(), tex.get_ogl_type());
-    if (src_pxfmt == PXFMT_INVALID)
+    else
     {
-        vogl_error_printf("Unsupported KTX format/type: 0x%X 0x%X\n", tex.get_ogl_fmt(), tex.get_ogl_type());
-        return EXIT_FAILURE;
+        src_pxfmt = validate_format_type_combo(tex.get_ogl_fmt(), tex.get_ogl_type());
+        if (src_pxfmt == PXFMT_INVALID)
+        {
+            vogl_error_printf("Unsupported KTX format/type: 0x%X 0x%X\n", tex.get_ogl_fmt(), tex.get_ogl_type());
+            return EXIT_FAILURE;
+        }
     }
 
     // TODO: This is a total work in progress!
