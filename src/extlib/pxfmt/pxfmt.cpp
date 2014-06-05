@@ -188,10 +188,11 @@ union double_conversion
 template <pxfmt_sized_format F> struct pxfmt_per_fmt_info { };
 
 #define FMT_INFO_BASE(F, ogl_fmt, ftype, itype, ncomps, bypp,           \
-                      needfp, norm, is_signed, pack, compr,             \
+                      needfp, norm, is_signed, pack,                    \
                       in0, in1, in2, in3,                               \
                       nbits0, nbits1, nbits2, nbits3,                   \
-                      shift0, shift1, shift2, shift3)                   \
+                      shift0, shift1, shift2, shift3,                   \
+                      is_comp, bwidth, bheight)                         \
                                                                         \
     template <> struct pxfmt_per_fmt_info<F>                            \
     {                                                                   \
@@ -208,7 +209,6 @@ template <pxfmt_sized_format F> struct pxfmt_per_fmt_info { };
         static const bool m_is_normalized = norm;                       \
         static const bool m_is_signed = is_signed;                      \
         static const bool m_is_packed = pack;                           \
-        static const bool m_is_compressed = compr;                      \
                                                                         \
         /* The m_index[] members identify which "component index" */    \
         /* to use for the n'th component dealt with.  For example, */   \
@@ -236,6 +236,10 @@ template <pxfmt_sized_format F> struct pxfmt_per_fmt_info { };
         /* "small-floating-point" number is represented by a given */   \
         /* component. */                                                \
         static const pxfmt_small_fp m_small_fp[4];                      \
+                                                                        \
+        static const bool m_is_compressed = is_comp;                    \
+        static const uint32 m_block_width = bwidth;                     \
+        static const uint32 m_block_height = bheight;                   \
     };                                                                  \
     const int32 pxfmt_per_fmt_info<F>::m_index[] = {in0, in1, in2, in3}; \
     const uint32 pxfmt_per_fmt_info<F>::m_max[] =                       \
@@ -259,10 +263,11 @@ template <pxfmt_sized_format F> struct pxfmt_per_fmt_info { };
                  shift0, shift1, shift2, shift3)                        \
                                                                         \
     FMT_INFO_BASE(F, ogl_fmt, ftype, itype, ncomps, bypp,               \
-                  needfp, norm, is_signed, pack, false,                 \
+                  needfp, norm, is_signed, pack,                        \
                   in0, in1, in2, in3,                                   \
                   nbits0, nbits1, nbits2, nbits3,                       \
-                  shift0, shift1, shift2, shift3);                      \
+                  shift0, shift1, shift2, shift3,                       \
+                  false, 0, 0);                                         \
     const pxfmt_small_fp pxfmt_per_fmt_info<F>::m_small_fp[] =          \
         {NON_FP, NON_FP, NON_FP, NON_FP};
 
@@ -275,20 +280,23 @@ template <pxfmt_sized_format F> struct pxfmt_per_fmt_info { };
                      sfp0, sfp1, sfp2, sfp3)                            \
                                                                         \
     FMT_INFO_BASE(F, ogl_fmt, ftype, itype, ncomps, bypp,               \
-                  true, false, is_signed, false, false,                 \
+                  true, false, is_signed, false,                        \
                   in0, in1, in2, in3,                                   \
                   nbits0, nbits1, nbits2, nbits3,                       \
-                  shift0, shift1, shift2, shift3);                      \
+                  shift0, shift1, shift2, shift3,                       \
+                  false, 0, 0);                                         \
     const pxfmt_small_fp pxfmt_per_fmt_info<F>::m_small_fp[] =          \
             {sfp0, sfp1, sfp2, sfp3};
 
     // This variation is used for compressed texture formats:
-#define FMT_INFO_COMPRESSED(F, ogl_fmt, ncomps, is_signed)              \
+#define FMT_INFO_COMPRESSED(F, ogl_fmt, ncomps, is_signed,              \
+                            bwidth, bheight)                            \
                                                                         \
-    FMT_INFO_BASE(F, ogl_fmt, uint32, double,        \
+    FMT_INFO_BASE(F, ogl_fmt, uint32, double,                           \
                   ncomps, /*don't care*/1,                              \
-                  true, false, is_signed, /*don't care*/false, true,    \
-                  0, 0, 0, 0,    0, 0, 0, 0,    0, 0, 0, 0);            \
+                  true, false, is_signed, /*don't care*/false,          \
+                  0, 0, 0, 0,    0, 0, 0, 0,    0, 0, 0, 0,             \
+                  true, bwidth, bheight);                               \
     const pxfmt_small_fp pxfmt_per_fmt_info<F>::m_small_fp[] =          \
         {NON_FP, NON_FP, NON_FP, NON_FP};
 
@@ -548,7 +556,7 @@ FMT_INFO(PXFMT_D24_UNORM_S8_UINT,GL_DEPTH_STENCIL,uint32,double,2,4,true, false,
 FMT_INFO(PXFMT_D32_FLOAT_S8_UINT,GL_DEPTH_STENCIL,float, double,2,8,true, false, false, false,  0, 1, -1, -1,     0,  8,  0,  0,   0, 0, 0, 0);
 
 // ETC1/ETC2 compressed texture internalformats
-FMT_INFO_COMPRESSED(PXFMT_COMPRESSED_RGB8_ETC2,    GL_RGB, 3, false);
+FMT_INFO_COMPRESSED(PXFMT_COMPRESSED_RGB8_ETC2,    GL_RGB, 3, false, 4, 4);
 
 
 
@@ -574,6 +582,15 @@ void get_pxfmt_info(const uint32 width, uint32 &pixel_stride,
     {
         pixel_stride = pxfmt_per_fmt_info<F>::m_bytes_per_pixel;
         row_stride = ((pixel_stride * width) + 3) & 0xFFFFFFFC;
+        needs_fp_intermediate = pxfmt_per_fmt_info<F>::m_needs_fp_intermediate;
+    }
+    else
+    {
+// FIXME - MAKE THE FOLLOWING CODE REAL!  IT'S JUST TRYING TO USE m_block_* NOW:
+// FIXME - MAKE THE FOLLOWING CODE REAL!  IT'S JUST TRYING TO USE m_block_* NOW:
+// FIXME - MAKE THE FOLLOWING CODE REAL!  IT'S JUST TRYING TO USE m_block_* NOW:
+        pixel_stride = pxfmt_per_fmt_info<F>::m_block_width;
+        row_stride = pxfmt_per_fmt_info<F>::m_block_height;
         needs_fp_intermediate = pxfmt_per_fmt_info<F>::m_needs_fp_intermediate;
     }
 }
@@ -1592,7 +1609,9 @@ void query_pxfmt_sized_format(bool *has_red,   bool *has_green,
 
     *bytes_per_pixel = pxfmt_per_fmt_info<F>::m_bytes_per_pixel;
 
-    // TODO: Add support for compressed texture values
+    *is_compressed = pxfmt_per_fmt_info<F>::m_is_compressed;
+// FIXME/TBD: IS THIS THE CORRECT PARAMETER/VALUE?  DO THE RIGHT THING!
+    *block_size = pxfmt_per_fmt_info<F>::m_block_width;
 }
 
 
