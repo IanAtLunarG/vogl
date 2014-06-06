@@ -669,8 +669,7 @@ void get_compression_block_info(const uint32 width,
                                 uint32 &block_width,
                                 uint32 &block_height,
                                 uint32 &block_perblock_stride,
-                                uint32 &block_perrow_stride,
-                                bool &needs_fp_intermediate)
+                                uint32 &block_perrow_stride)
 {
     assert(pxfmt_per_fmt_info<F>::m_is_compressed == true);
 
@@ -681,27 +680,30 @@ void get_compression_block_info(const uint32 width,
     // Just in case "width" isn't a multiple of "block_perblock_stride",
     // potentially scale it up to a multiple of "block_perblock_stride":
     uint32 scaled_width = round_to_block_size(width, block_perblock_stride);
-    block_perrow_stride = ((block_perblock_stride * scaled_width);
-
-    needs_fp_intermediate = pxfmt_per_fmt_info<F>::m_needs_fp_intermediate;
+// FIXME: NEED TO DIVIDE scaled_width BY BLOCK SIZE!!!
+// FIXME: NEED TO DIVIDE scaled_width BY BLOCK SIZE!!!
+// FIXME: NEED TO DIVIDE scaled_width BY BLOCK SIZE!!!
+// FIXME: NEED TO DIVIDE scaled_width BY BLOCK SIZE!!!
+    block_perrow_stride = block_perblock_stride * scaled_width;
 }
 
 inline
-get_compression_block_info(width, src_block_width, src_block_height,
-                               src_block_perblock_stride,
-                               src_block_perrow_stride,
-                               src_fmt)
-void get_pxfmt_info(const uint32 width, uint32 &pixel_stride,
-                    uint32 &row_stride, bool &needs_fp_intermediate,
-                    const pxfmt_sized_format fmt)
+void get_compression_block_info(const uint32 width,
+                                uint32 &block_width,
+                                uint32 &block_height,
+                                uint32 &block_perblock_stride,
+                                uint32 &block_perrow_stride,
+                                const pxfmt_sized_format fmt)
 {
 #ifdef CASE_STATEMENT
 #undef CASE_STATEMENT
 #endif
 #define CASE_STATEMENT(fmt)                                             \
     case fmt:                                                           \
-        get_pxfmt_info<fmt>(width, pixel_stride, row_stride,            \
-                             needs_fp_intermediate);                    \
+        get_compression_block_info(width, block_width, block_height,    \
+                                   block_perblock_stride,               \
+                                   block_perrow_stride,                 \
+                                   fmt);                                \
         break;
 
     switch (fmt)
