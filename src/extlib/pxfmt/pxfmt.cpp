@@ -628,6 +628,39 @@ void get_pxfmt_info(const uint32 width, uint32 &pixel_stride,
     }
 }
 
+uint32 round_to_block_size(uint32 width, uint32 block_size)
+{
+    assert(block_size);
+    // Let's say that width = 7 and block_perblock_stride = 8 (i.e. 64-bits).
+    // We need to add 1 to width.  The expression:
+    //     "block_perblock_stride % width"
+    // will yield the result 7.  Thus, we simply need to subtract that from
+    // "block_perblock_stride".  Hmm, except for when the result is 0 (width
+    // is okay in this case.
+    //
+    // width  block_size  "width%block_size"  add-to-width  scaled_width
+    //
+    //   1         8             1               7                8
+    //   2         8             2               6                8
+    //   3         8             3               5                8
+    //   4         8             4               4                8
+    //   5         8             5               3                8
+    //   6         8             6               2                8
+    //   7         8             7               1                8
+    //   8         8             0 => early return of width       8
+    //   9         8             1               7               16
+    //   10        8             2               6               16
+    //   11        8             3               5               16
+
+    uint32 remainder = width % block_size;
+    if (remainder == 0)
+    {
+        return width;
+    }
+    uint32 scaled_width = (width + (block_size - remainder));
+    return scaled_width;
+}
+
 // This templatized function determines the per-block and per-row stride for
 // the given compressed-texture pxfmt_sized_format and width.
 template <pxfmt_sized_format F>
@@ -647,30 +680,9 @@ void get_compression_block_info(const uint32 width,
     block_perblock_stride = pxfmt_per_fmt_info<F>::m_block_size;
     // Just in case "width" isn't a multiple of "block_perblock_stride",
     // potentially scale it up to a multiple of "block_perblock_stride":
-    // Let's say that width = 7 and block_perblock_stride = 8 (i.e. 64-bits).
-    // We need to add 1 to width.  The expression:
-    //     "block_perblock_stride % width"
-    // will yield the result 7.  Thus, we simply need to subtract that from
-    // "block_perblock_stride".  Hmm.  That doesn't always work.  Let's try all
-    // of the relevant values, to see what's wrong:
-    //
-    // width  perblock_stride  width % block_perblock_stride  add-to-width
-    //
-    //   1            8                     1                    7
-    //   2            8                     2                    6
-    //   3            8                     3                    5
-    //   4            8                     4                    4
-    //   5            8                     5                    3
-    //   6            8                     6                    2
-    //   7            8                     7                    1
-    //   8            8                     0 => 8               8 ==> 0
-    //   9            8                     1                    7
-    //   10           8                     2                    6
-    //   11           8                     3                    5
-
-    uint32 scaled_width =
-        (width + (block_perblock_stride - (width % block_perblock_stride)));
+    uint32 scaled_width = round_to_block_size(width, block_perblock_stride);
     block_perrow_stride = ((block_perblock_stride * scaled_width);
+
     needs_fp_intermediate = pxfmt_per_fmt_info<F>::m_needs_fp_intermediate;
 }
 
