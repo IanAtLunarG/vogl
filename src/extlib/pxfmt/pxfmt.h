@@ -417,4 +417,33 @@ pxfmt_conversion_status pxfmt_convert_pixels(void *pDst,
                                              size_t alt_dst_row_stride = 0,
                                              size_t alt_src_row_stride = 0);
 
+
+// This function is used to convert a rectangular set of compressed-texture
+// data to an uncompressed pxfmt_sized_format.  Size-wise, there is only one
+// type of "intermediate data" values (double).  Data is uncompressed to double
+// intermediate values, and then converted from that to the destination.  As
+// long as the intermediate values contain enough precision, etc, values can be
+// converted in a loss-less fashion.
+//
+// Parameters:
+//
+//   pDst    (IN) - pointer to memory to copy/convert pixels into.
+//   pSrc    (IN) - pointer to memory to copy/convert pixels from.
+//   width   (IN) - the image is this many pixels wide.
+//   height  (IN) - the image is this many pixels tall.
+//   dst_fmt (IN) - the pxfmt_sized_format of the destination image.
+//   src_fmt (IN) - the pxfmt_sized_format of the source image.
+//   dst_size (IN) - size (in bytes) of the dst.
+//   src_size (IN) - size (in bytes) of the src.
+//
+// Return Value: whether the conversion succeeded, or why it did not succeed.
+pxfmt_conversion_status pxfmt_decompress_pixels(void *pDst,
+                                                const void *pSrc,
+                                                const int width,
+                                                const int height,
+                                                const pxfmt_sized_format dst_fmt,
+                                                const pxfmt_sized_format src_fmt,
+                                                size_t dst_size,
+                                                size_t src_size);
+
 #endif // PXFMT_H

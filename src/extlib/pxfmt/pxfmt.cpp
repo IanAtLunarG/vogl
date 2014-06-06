@@ -583,7 +583,7 @@ FMT_INFO_COMPRESSED(PXFMT_COMPRESSED_RGB8_ETC2,    GL_RGB, 3, false, 4, 4, 8);
  *
  ******************************************************************************/
 
-// This templatized function determines the per-stride and per-row stride for
+// This templatized function determines the per-pixel and per-row stride for
 // the given pxfmt_sized_format and width.
 template <pxfmt_sized_format F>
 inline
@@ -608,6 +608,77 @@ void get_pxfmt_info(const uint32 width, uint32 &pixel_stride,
 }
 
 inline
+void get_pxfmt_info(const uint32 width, uint32 &pixel_stride,
+                    uint32 &row_stride, bool &needs_fp_intermediate,
+                    const pxfmt_sized_format fmt)
+{
+#ifdef CASE_STATEMENT
+#undef CASE_STATEMENT
+#endif
+#define CASE_STATEMENT(fmt)                                             \
+    case fmt:                                                           \
+        get_pxfmt_info<fmt>(width, pixel_stride, row_stride,            \
+                             needs_fp_intermediate);                    \
+        break;
+
+    switch (fmt)
+    {
+#include "pxfmt_case_statements.inl"
+        case PXFMT_INVALID: break;
+    }
+}
+
+// This templatized function determines the per-block and per-row stride for
+// the given compressed-texture pxfmt_sized_format and width.
+template <pxfmt_sized_format F>
+inline
+void get_compression_block_info(const uint32 width,
+                                uint32 &block_width,
+                                uint32 &block_height,
+                                uint32 &block_perblock_stride,
+                                uint32 &block_perrow_stride,
+                                bool &needs_fp_intermediate)
+{
+    assert(pxfmt_per_fmt_info<F>::m_is_compressed == true);
+
+    block_width = pxfmt_per_fmt_info<F>::m_block_width;
+    block_height = pxfmt_per_fmt_info<F>::m_block_height;
+
+    block_perblock_stride = pxfmt_per_fmt_info<F>::m_block_size;
+    // Just in case "width" isn't a multiple of "block_perblock_stride",
+    // potentially scale it up to a multiple of "block_perblock_stride":
+    // Let's say that width = 7 and block_perblock_stride = 8 (i.e. 64-bits).
+    // We need to add 1 to width.  The expression:
+    //     "block_perblock_stride % width"
+    // will yield the result 7.  Thus, we simply need to subtract that from
+    // "block_perblock_stride".  Hmm.  That doesn't always work.  Let's try all
+    // of the relevant values, to see what's wrong:
+    //
+    // width  perblock_stride  width % block_perblock_stride  add-to-width
+    //
+    //   1            8                     1                    7
+    //   2            8                     2                    6
+    //   3            8                     3                    5
+    //   4            8                     4                    4
+    //   5            8                     5                    3
+    //   6            8                     6                    2
+    //   7            8                     7                    1
+    //   8            8                     0 => 8               8 ==> 0
+    //   9            8                     1                    7
+    //   10           8                     2                    6
+    //   11           8                     3                    5
+
+    uint32 scaled_width =
+        (width + (block_perblock_stride - (width % block_perblock_stride)));
+    block_perrow_stride = ((block_perblock_stride * scaled_width);
+    needs_fp_intermediate = pxfmt_per_fmt_info<F>::m_needs_fp_intermediate;
+}
+
+inline
+get_compression_block_info(width, src_block_width, src_block_height,
+                               src_block_perblock_stride,
+                               src_block_perrow_stride,
+                               src_fmt)
 void get_pxfmt_info(const uint32 width, uint32 &pixel_stride,
                     uint32 &row_stride, bool &needs_fp_intermediate,
                     const pxfmt_sized_format fmt)
