@@ -89,9 +89,10 @@ bool vogl_get_default_framebuffer_attribs(vogl_default_framebuffer_attribs &attr
         attribs.m_stencil_size = stencil_size;
         attribs.m_samples = samples;
         attribs.m_double_buffered = (doublebuffer != 0);
-
-        GL_ENTRYPOINT(glXQueryDrawable)(pDisplay, pDrawable, GLX_WIDTH, &attribs.m_width);
-        GL_ENTRYPOINT(glXQueryDrawable)(pDisplay, pDrawable, GLX_HEIGHT, &attribs.m_height);
+        XWindowAttributes attrs;
+        XGetWindowAttributes(pDisplay, pDrawable, &attrs);
+        attribs.m_width = attrs.width;
+        attribs.m_height = attrs.height;
 
         return true;
     #else
