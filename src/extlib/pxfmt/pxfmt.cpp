@@ -2589,10 +2589,18 @@ pxfmt_conversion_status pxfmt_decompress_pixels(void *pDst,
                                src_block_perrow_stride,
                                src_fmt);
 
+    // Now that we have info about the src's per-compression-block, also
+    // determine the dst's stride within a row of blocks, and between rows of
+    // blocks:
+    uint32 dst_block_perblock_stride = dst_pixel_stride * src_block_width;
+    uint32 dst_block_perrow_stride = dst_row_stride * src_block_height;
+
     // Ensure that the values we got make sense, including that the
     // row_stride*width match the given size:
     if (!((dst_pixel_stride > 0) ||
           (dst_row_stride > 0) ||
+          (dst_block_perblock_stride > 0) ||
+          (dst_block_perrow_stride > 0) ||
           (src_block_width > 0) ||
           (src_block_height > 0) ||
           (src_block_perblock_stride > 0) ||
@@ -2614,39 +2622,34 @@ pxfmt_conversion_status pxfmt_decompress_pixels(void *pDst,
     }
 #endif // TEMPORARILY_DISABLE_SIZE_CHECK
 
-    // Use local pointers to the src and dst (both to increment within and
-    // between rows) in order to properly deal with all strides:
+    // Use a matrix of (double-precision floating-point) intermediate values
+    // according to the width and height of the compressed-texture block:
+    uint32 interm_pixel_stride = 4 * sizeof(double);
+    uint32 interm_row_stride = interm_pixel_stride * src_block_width;
+    uint8 *intermediate = (uint8 *) malloc(sizeof(double) *
+                                           src_block_width *
+                                           src_block_height);
+    if (NULL == intermediate)
+    {
+        return PXFMT_CONVERSION_UNKNOWN_ERROR;
+    }
+
+    // Use local pointers to the src, dst, and intermediate values (both to
+    // increment within and between rows) in order to properly deal with all
+    // strides:
     uint8 *src, *src_row, *src_block, *src_block_row;
     uint8 *dst, *dst_row, *dst_block, *dst_block_row;
     src = src_row = src_block = src_block_row = (uint8 *) pSrc;
     dst = dst_row = dst_block = dst_block_row = (uint8 *) pDst;
-
-// NEED: stride within a row of blocks, and between rows of blocks (src & dst)
-    uint32 inter_pixel_stride = 4 * sizeof(double);
-    uint32 inter_row_stride = inter_pixel_stride * src_block_width;
-    uint32 dst_block_perblock_stride = dst_pixel_stride * src_block_width;
-    uint32 dst_block_perrow_stride = dst_row_stride * src_block_height;
-
-// NEED: a matrix of intermediates according to the width and height of the block
-
-// NEED: within the 2nd for-loop, call a decompress_block() function for a block
-
-// NEED: after calling decompress_block(), 2 more for-loops for calling
-// from_intermediate() for all of the pixels within a block
-
-    // In order to handle 32-bit normalized values, we need to use
-    // double-precision floating-point intermediate values:
-    uint8 *intermediate = (uint8 *) malloc(sizeof(double) *
-                                           src_block_width *
-                                           src_block_height);
-    uint8 *inter, *inter_row;
-    inter = inter_row = (uint8 *) intermediate;
+    uint8 *inter, *interm_row;
+    inter = interm_row = (uint8 *) intermediate;
 
     for (int y = 0 ; y < height ; y++)
     {
         for (int x = 0 ; x < width ; x++)
         {
             // Decompress an src entire block:
+// FIXME: call a decompress_block() function for this src block
             to_intermediate(intermediate, src, src_fmt);
             inter = intermediate;
             // Put that block's worth of pixels into dst:
@@ -2655,10 +2658,10 @@ pxfmt_conversion_status pxfmt_decompress_pixels(void *pDst,
                 for (int x2 = 0 ; x2 < (int32) src_block_width ; x2++)
                 {
                     from_intermediate(dst, intermediate, dst_fmt);
-                    inter += inter_pixel_stride;
+                    inter += interm_pixel_stride;
                     dst += dst_pixel_stride;
                 }
-                inter = inter_row += inter_row_stride;
+                inter = interm_row += interm_row_stride;
                 dst = dst_row += dst_row_stride;
             }
 
