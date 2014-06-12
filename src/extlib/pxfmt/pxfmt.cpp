@@ -590,21 +590,9 @@ inline
 void get_pxfmt_info(const uint32 width, uint32 &pixel_stride,
                     uint32 &row_stride, bool &needs_fp_intermediate)
 {
-    if (!pxfmt_per_fmt_info<F>::m_is_compressed)
-    {
-        pixel_stride = pxfmt_per_fmt_info<F>::m_bytes_per_pixel;
-        row_stride = ((pixel_stride * width) + 3) & 0xFFFFFFFC;
-        needs_fp_intermediate = pxfmt_per_fmt_info<F>::m_needs_fp_intermediate;
-    }
-    else
-    {
-// FIXME - MAKE THE FOLLOWING CODE REAL!  IT'S JUST TRYING TO USE m_block_* NOW:
-// FIXME - MAKE THE FOLLOWING CODE REAL!  IT'S JUST TRYING TO USE m_block_* NOW:
-// FIXME - MAKE THE FOLLOWING CODE REAL!  IT'S JUST TRYING TO USE m_block_* NOW:
-        pixel_stride = pxfmt_per_fmt_info<F>::m_block_width;
-        row_stride = pxfmt_per_fmt_info<F>::m_block_height;
-        needs_fp_intermediate = pxfmt_per_fmt_info<F>::m_needs_fp_intermediate;
-    }
+    pixel_stride = pxfmt_per_fmt_info<F>::m_bytes_per_pixel;
+    row_stride = ((pixel_stride * width) + 3) & 0xFFFFFFFC;
+    needs_fp_intermediate = pxfmt_per_fmt_info<F>::m_needs_fp_intermediate;
 }
 
 inline
@@ -700,10 +688,10 @@ void get_compression_block_info(const uint32 width,
 #endif
 #define CASE_STATEMENT(fmt)                                             \
     case fmt:                                                           \
-        get_compression_block_info(width, block_width, block_height,    \
-                                   block_perblock_stride,               \
-                                   block_perrow_stride,                 \
-                                   fmt);                                \
+        get_compression_block_info<fmt>(width,                          \
+                                        block_width, block_height,      \
+                                        block_perblock_stride,          \
+                                        block_perrow_stride);           \
         break;
 
     switch (fmt)
