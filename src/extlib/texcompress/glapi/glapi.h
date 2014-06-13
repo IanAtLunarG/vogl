@@ -44,7 +44,7 @@
 #ifndef _GLAPI_H
 #define _GLAPI_H
 
-#include "u_thread.h"
+//#include "u_thread.h"
 
 
 #ifdef __cplusplus

@@ -31,6 +31,7 @@ set(SRC_LIST
     context.h
     formats.h
     mtypes.h
+    macros.h
     compiler.h
     texstore.h
     errors.h

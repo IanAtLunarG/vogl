@@ -1190,7 +1190,7 @@ struct gl_sampler_object
  */
 struct gl_texture_object
 {
-   mtx_t Mutex;      /**< for thread safety */
+//   mtx_t Mutex;      /**< for thread safety */
    GLint RefCount;             /**< reference count */
    GLuint Name;                /**< the user-visible texture object ID */
    GLchar *Label;               /**< GL_KHR_debug */
@@ -1471,7 +1471,7 @@ struct gl_buffer_mapping {
  */
 struct gl_buffer_object
 {
-   mtx_t Mutex;
+//   mtx_t Mutex;
    GLint RefCount;
    GLuint Name;
    GLchar *Label;       /**< GL_KHR_debug */
@@ -1584,7 +1584,7 @@ struct gl_vertex_array_object
    GLchar *Label;       /**< GL_KHR_debug */
 
    GLint RefCount;
-   mtx_t Mutex;
+//   mtx_t Mutex;
 
    /**
     * Does the VAO use ARB semantics or Apple semantics?
@@ -2793,7 +2793,7 @@ struct gl_pipeline_object
 
    GLint RefCount;
 
-   mtx_t Mutex;
+//   mtx_t Mutex;
 
    /**
     * Programs used for rendering
@@ -2935,7 +2935,7 @@ struct gl_sync_object
  */
 struct gl_shared_state
 {
-   mtx_t Mutex;		   /**< for thread safety */
+//   mtx_t Mutex;		   /**< for thread safety */
    GLint RefCount;			   /**< Reference count */
    struct _mesa_HashTable *DisplayList;	   /**< Display lists hash table */
    struct _mesa_HashTable *TexObjects;	   /**< Texture objects hash table */
@@ -2953,7 +2953,7 @@ struct gl_shared_state
     * \todo Improve the granularity of locking.
     */
    /*@{*/
-   mtx_t TexMutex;		/**< texobj thread safety */
+//   mtx_t TexMutex;		/**< texobj thread safety */
    GLuint TextureStateStamp;	        /**< state notification for shared tex */
    /*@}*/
 
@@ -3010,7 +3010,7 @@ struct gl_shared_state
  */
 struct gl_renderbuffer
 {
-   mtx_t Mutex; /**< for thread safety */
+//   mtx_t Mutex; /**< for thread safety */
    GLuint ClassID;        /**< Useful for drivers */
    GLuint Name;
    GLchar *Label;         /**< GL_KHR_debug */
@@ -3088,7 +3088,7 @@ struct gl_renderbuffer_attachment
  */
 struct gl_framebuffer
 {
-   mtx_t Mutex;  /**< for thread safety */
+//   mtx_t Mutex;  /**< for thread safety */
    /**
     * If zero, this is a window system framebuffer.  If non-zero, this
     * is a FBO framebuffer; note that for some devices (i.e. those with
@@ -3729,6 +3729,7 @@ struct gl_matrix_stack
 
 
 /* This has to be included here. */
+#ifdef OLD_CODE
 #include "dd.h"
 
 
@@ -4297,6 +4298,8 @@ enum _debug
    DEBUG_INCOMPLETE_FBO         = (1 << 3)
 };
 
+
+#endif // OLD_CODE
 
 
 #ifdef __cplusplus
