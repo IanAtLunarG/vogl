@@ -44,8 +44,9 @@ add_subdirectory(src/vogltrace) # 6
 add_subdirectory(src/vogltest) # 7
 add_subdirectory(src/glxspheres) # 8
 
-add_subdirectory(src/extlib/pxfmt) # 12
-add_subdirectory(src/ktxtool) # 13
+add_subdirectory(src/extlib/texcompress) # 12
+add_subdirectory(src/extlib/pxfmt) # 13
+add_subdirectory(src/ktxtool) # 14
 
 if (NOT WIN32)
     add_subdirectory(src/vogleditor) # 9
