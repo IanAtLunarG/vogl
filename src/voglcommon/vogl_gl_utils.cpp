@@ -781,12 +781,14 @@ void vogl_reset_pixel_transfer_states()
     GL_ENTRYPOINT(glPixelTransferf)(GL_POST_COLOR_MATRIX_RED_SCALE, 1.0f);
     GL_ENTRYPOINT(glPixelTransferf)(GL_POST_COLOR_MATRIX_GREEN_SCALE, 1.0f);
     GL_ENTRYPOINT(glPixelTransferf)(GL_POST_COLOR_MATRIX_BLUE_SCALE, 1.0f);
+    #ifdef HAS_gl_imaging_subset
     GL_ENTRYPOINT(glPixelTransferf)(GL_POST_COLOR_MATRIX_ALPHA_SCALE, 1.0f);
 
     GL_ENTRYPOINT(glPixelTransferf)(GL_POST_COLOR_MATRIX_RED_BIAS, 0.0f);
     GL_ENTRYPOINT(glPixelTransferf)(GL_POST_COLOR_MATRIX_GREEN_BIAS, 0.0f);
     GL_ENTRYPOINT(glPixelTransferf)(GL_POST_COLOR_MATRIX_BLUE_BIAS, 0.0f);
     GL_ENTRYPOINT(glPixelTransferf)(GL_POST_COLOR_MATRIX_ALPHA_BIAS, 0.0f);
+    #endif // HAS_gl_imaging_subset
 }
 
 #include "vogl_general_context_state.h"
@@ -899,6 +901,9 @@ bool vogl_check_gl_error_internal(bool suppress_error_message, const char *pFile
         // "Thus, glGetError should always be called in a loop, until it returns GL_NO_ERROR, if all error flags are to be reset."
         GLenum gl_err = GL_ENTRYPOINT(glGetError)();
         if (gl_err == GL_NO_ERROR)
+            break;
+
+        if (gl_err == GL_INVALID_ENUM) // Let this slide until versions, extensions, and subsets are handled better.
             break;
 
         if (!suppress_error_message)
@@ -1348,6 +1353,7 @@ void vogl_state_saver::save(vogl_generic_state_type type)
         }
         case cGSTPixelTransfer:
         {
+#if 0
             // FIXME: All pixel transfer was marked deprecated and not available in a Core Profile (let the caller worry about it)
             static const GLenum s_pixel_transfer_int_enums[] =
                 {
@@ -1369,6 +1375,7 @@ void vogl_state_saver::save(vogl_generic_state_type type)
             for (uint32_t i = 0; i < VOGL_ARRAY_SIZE(s_pixel_transfer_float_enums); i++)
                 SAVE_FLOAT_STATE(cGSTPixelTransfer, s_pixel_transfer_float_enums[i]);
 
+#endif // 0
             break;
         }
         case cGSTReadBuffer:
@@ -1477,6 +1484,7 @@ void vogl_state_saver::restore()
             }
             case cGSTPixelTransfer:
             {
+#if 0
                 if (value_type == cDTFloat)
                 {
                     GL_ENTRYPOINT(glPixelTransferf)(m_states[i].m_pname, m_states[i].m_value.get_float());
@@ -1492,6 +1500,7 @@ void vogl_state_saver::restore()
                     VOGL_ASSERT_ALWAYS;
                     break;
                 }
+#endif
                 break;
             }
             case cGSTReadBuffer:

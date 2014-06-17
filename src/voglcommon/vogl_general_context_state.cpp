@@ -1922,12 +1922,15 @@ bool vogl_general_context_state::restore(const vogl_context_info &context_info, 
     static const GLenum s_pixel_transfer_pnames[] =
         {
             GL_INDEX_SHIFT, GL_INDEX_OFFSET, GL_RED_SCALE, GL_GREEN_SCALE, GL_BLUE_SCALE, GL_ALPHA_SCALE, GL_DEPTH_SCALE,
-            GL_RED_BIAS, GL_GREEN_BIAS, GL_BLUE_BIAS, GL_ALPHA_BIAS, GL_DEPTH_BIAS, GL_POST_COLOR_MATRIX_RED_SCALE,
+            GL_RED_BIAS, GL_GREEN_BIAS, GL_BLUE_BIAS, GL_ALPHA_BIAS, GL_DEPTH_BIAS,
+    #ifdef HAS_gl_imaging_subset
+        GL_POST_COLOR_MATRIX_RED_SCALE,
             GL_POST_COLOR_MATRIX_GREEN_SCALE, GL_POST_COLOR_MATRIX_BLUE_SCALE, GL_POST_COLOR_MATRIX_ALPHA_SCALE,
             GL_POST_COLOR_MATRIX_RED_BIAS, GL_POST_COLOR_MATRIX_GREEN_BIAS, GL_POST_COLOR_MATRIX_BLUE_BIAS,
             GL_POST_COLOR_MATRIX_ALPHA_BIAS, GL_POST_CONVOLUTION_RED_SCALE, GL_POST_CONVOLUTION_GREEN_SCALE,
             GL_POST_CONVOLUTION_BLUE_SCALE, GL_POST_CONVOLUTION_ALPHA_SCALE, GL_POST_CONVOLUTION_RED_BIAS,
             GL_POST_CONVOLUTION_GREEN_BIAS, GL_POST_CONVOLUTION_BLUE_BIAS, GL_POST_CONVOLUTION_ALPHA_BIAS
+    #endif // HAS_gl_imaging_subset
         };
 
     for (uint32_t i = 0; i < VOGL_ARRAY_SIZE(s_pixel_transfer_pnames); i++)
@@ -2329,6 +2332,7 @@ bool vogl_general_context_state::restore(const vogl_context_info &context_info, 
     //ADD_PROCESSED_STATE(GL_CURRENT_RASTER_SECONDARY_COLOR, 0); // can't retrieve on AMD's v13 drivers
 
     // Image bindings
+#ifdef HAS_ARB_shader_image_load_store
     GLint max_image_units = 0;
     GL_ENTRYPOINT(glGetIntegerv)(GL_MAX_IMAGE_UNITS, &max_image_units);
     VOGL_CHECK_GL_ERROR;
@@ -2366,6 +2370,7 @@ bool vogl_general_context_state::restore(const vogl_context_info &context_info, 
         GL_ENTRYPOINT(glBindImageTexture)(i, replay_binding, level, layered, layer, access, format);
         VOGL_CHECK_GL_ERROR;
     }
+#endif // HAS_ARB_shader_image_load_store
 
     // TODO: pixel maps?
 
@@ -2435,7 +2440,9 @@ bool vogl_general_context_state::restore(const vogl_context_info &context_info, 
     NOTE_UNUSED(GL_DEBUG_GROUP_STACK_DEPTH)
     NOTE_UNUSED(GL_MAX_ATTRIB_STACK_DEPTH)
     NOTE_UNUSED(GL_MAX_CLIENT_ATTRIB_STACK_DEPTH)
+    #ifdef HAS_gl_imaging_subset
     NOTE_UNUSED(GL_MAX_COLOR_MATRIX_STACK_DEPTH)
+    #endif // HAS_gl_imaging_subset
     NOTE_UNUSED(GL_MAX_DEBUG_GROUP_STACK_DEPTH)
     NOTE_UNUSED(GL_MAX_MODELVIEW_STACK_DEPTH)
     NOTE_UNUSED(GL_MAX_NAME_STACK_DEPTH)
@@ -2529,7 +2536,9 @@ bool vogl_general_context_state::restore(const vogl_context_info &context_info, 
     NOTE_UNUSED(GL_MODELVIEW_STACK_DEPTH)
     NOTE_UNUSED(GL_NAME_STACK_DEPTH)
     NOTE_UNUSED(GL_PROJECTION_STACK_DEPTH)
+    #ifdef HAS_gl_imaging_subset
     NOTE_UNUSED(GL_COLOR_MATRIX)
+    #endif // HAS_gl_imaging_subset
     NOTE_UNUSED(GL_AUX_BUFFERS)
     NOTE_UNUSED(GL_COMPRESSED_TEXTURE_FORMATS)
     NOTE_UNUSED(GL_CONTEXT_FLAGS)

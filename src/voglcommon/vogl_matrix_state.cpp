@@ -195,8 +195,10 @@ bool vogl_matrix_state::snapshot(const vogl_context_info &context_info)
     if (!save_matrix_stack(context_info, GL_MODELVIEW, 0, GL_MODELVIEW_STACK_DEPTH, GL_MODELVIEW_MATRIX))
         any_errors = true;
 
+#ifdef HAS_gl_imaging_subset
     if (!save_matrix_stack(context_info, GL_COLOR, 0, GL_COLOR_MATRIX_STACK_DEPTH, GL_COLOR_MATRIX))
         any_errors = true;
+#endif // HAS_gl_imaging_subset
 
     for (uint32_t texcoord_index = 0; texcoord_index < context_info.get_max_texture_coords(); texcoord_index++)
     {

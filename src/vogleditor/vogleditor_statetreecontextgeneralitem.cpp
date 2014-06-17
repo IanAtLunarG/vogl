@@ -166,11 +166,15 @@ vogleditor_stateTreeContextGeneralItem::vogleditor_stateTreeContextGeneralItem(Q
     GET_INT(GL_COLOR_ARRAY_SIZE, 1);
     GET_INT(GL_COLOR_ARRAY_STRIDE, 1);
     GET_ENUM(GL_COLOR_ARRAY_TYPE, 1);
+#ifdef HAS_gl_imaging_subset
     GET_MATRIX(GL_COLOR_MATRIX, 16);
     GET_INT(GL_COLOR_MATRIX_STACK_DEPTH, 1);
+#endif // HAS_gl_imaging_subset
     GET_BOOL(GL_COLOR_SUM, 1);
     GET_BOOL(GL_COLOR_SUM_ARB, 1);
+#ifdef HAS_gl_imaging_subset
     GET_BOOL(GL_COLOR_TABLE, 1);
+#endif // HAS_gl_imaging_subset
     GET_BOOL(GL_COLOR_WRITEMASK, 4);
     GET_INDEXED_BOOL(GL_COLOR_WRITEMASK, 4, maxDrawBuffers);
 
@@ -514,6 +518,7 @@ vogleditor_stateTreeContextGeneralItem::vogleditor_stateTreeContextGeneralItem(Q
     GET_FLOAT(GL_POINT_DISTANCE_ATTENUATION, 3);
     GET_FLOAT(GL_POINT_FADE_THRESHOLD_SIZE, 1);
     GET_BOOL(GL_POINT_SPRITE, 1);
+#ifdef HAS_gl_imaging_subset
     GET_FLOAT(GL_POST_COLOR_MATRIX_ALPHA_BIAS, 1);
     GET_FLOAT(GL_POST_COLOR_MATRIX_ALPHA_SCALE, 1);
     GET_FLOAT(GL_POST_COLOR_MATRIX_BLUE_BIAS, 1);
@@ -532,6 +537,7 @@ vogleditor_stateTreeContextGeneralItem::vogleditor_stateTreeContextGeneralItem(Q
     GET_FLOAT(GL_POST_CONVOLUTION_GREEN_SCALE, 1);
     GET_FLOAT(GL_POST_CONVOLUTION_RED_BIAS, 1);
     GET_FLOAT(GL_POST_CONVOLUTION_RED_SCALE, 1);
+#endif // HAS_gl_imaging_subset
     GET_BOOL(GL_PRIMITIVE_RESTART, 1);
     GET_INT(GL_PRIMITIVE_RESTART_INDEX, 1);
     GET_MATRIX(GL_PROJECTION_MATRIX, 16);
