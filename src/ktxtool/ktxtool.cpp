@@ -12,7 +12,6 @@
 #include "vogl_file_utils.h"
 #include "vogl_image.h"
 #include "vogl_image_utils.h"
-#include "vogl_gl_utils.h"
 
 #include <GL/gl.h>
 #include "pxfmt.h"
@@ -133,17 +132,11 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
-//#define OLD_CODE
-#ifdef OLD_CODE
-    vogl_printf("KTX header: OppositeEndianness=%s, Format=0x%04x, Type=0x%04x\n",
-                tex.get_opposite_endianness() ? "true" : "false",
-                tex.get_ogl_fmt(), tex.get_ogl_type());
-#else  // OLD_CODE
-    vogl_printf("KTX header: OppositeEndianness=%s, Format=0x%04x=%s, Type=0x%04x=%s\n",
-                tex.get_opposite_endianness() ? "true" : "false",
-                tex.get_ogl_fmt(), get_gl_enums().find_name(tex.get_ogl_fmt()),
-                tex.get_ogl_type(), get_gl_enums().find_name(tex.get_ogl_type()));
-#endif // OLD_CODE
+//vogl_error_printf("KTX header key fields: Endianness=0x%08x, Format=0x%04x, Type=0x%04x\n",
+//                  tex.get_ogl_endianness(), tex.get_ogl_fmt(), tex.get_ogl_type());
+vogl_printf("KTX header: OppositeEndianness=%s, Format=0x%04x, Type=0x%04x\n",
+            tex.get_opposite_endianness() ? "true" : "false",
+            tex.get_ogl_fmt(), tex.get_ogl_type());
 
     pxfmt_sized_format src_pxfmt = validate_format_type_combo(tex.get_ogl_fmt(), tex.get_ogl_type());
     if (src_pxfmt == PXFMT_INVALID)

@@ -8,15 +8,11 @@ require_pthreads()
 find_package(X11 REQUIRED)
 
 include_directories(
-    ${SRC_DIR}/extlib/loki/include/loki
-    ${SRC_DIR}/voglcommon
     ${SRC_DIR}/voglcore
     ${SRC_DIR}/extlib/pxfmt
     )
 
 include_directories(
-    ${SRC_DIR}/extlib/loki/include/loki
-    ${SRC_DIR}/voglcommon
     ${SRC_DIR}/voglcore
     ${CMAKE_BINARY_DIR}/voglinc
     )
@@ -33,7 +29,6 @@ target_link_libraries(${PROJECT_NAME}
     ${CMAKE_DL_LIBS}
     ${X11_X11_LIB}
     ${CMAKE_THREAD_LIBS_INIT}
-    voglcommon
     voglcore
     pxfmt
     )
