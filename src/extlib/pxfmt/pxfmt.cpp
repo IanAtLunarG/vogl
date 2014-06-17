@@ -1800,10 +1800,17 @@ pxfmt_sized_format validate_format_type_combo(const GLenum format,
             return PXFMT_RGB5A1_UNORM;
         case GL_UNSIGNED_SHORT_1_5_5_5_REV:
             return PXFMT_A1RGB5_UNORM;
+#ifdef OLD_CODE
         case GL_UNSIGNED_INT_8_8_8_8:
             return PXFMT_RGBA8_UNORM;
         case GL_UNSIGNED_INT_8_8_8_8_REV:
             return PXFMT_RGBA8REV_UNORM;
+#else  // OLD_CODE
+        case GL_UNSIGNED_INT_8_8_8_8:
+            return PXFMT_RGBA8REV_UNORM;
+        case GL_UNSIGNED_INT_8_8_8_8_REV:
+            return PXFMT_RGBA8_UNORM;
+#endif // OLD_CODE
         case GL_UNSIGNED_INT_10_10_10_2:
             return PXFMT_RGB10A2_UNORM;
         case GL_UNSIGNED_INT_2_10_10_10_REV:
