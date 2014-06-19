@@ -567,8 +567,11 @@ FMT_INFO(PXFMT_S32_FLOAT,GL_STENCIL_INDEX,   float,  uint32, 1, 4, false, false,
 FMT_INFO(PXFMT_D24_UNORM_S8_UINT,GL_DEPTH_STENCIL,uint32,double,2,4,true, false, false, false,  0, 1, -1, -1,    24,  8,  0,  0,   0, 0, 0, 0);
 FMT_INFO(PXFMT_D32_FLOAT_S8_UINT,GL_DEPTH_STENCIL,float, double,2,8,true, false, false, false,  0, 1, -1, -1,     0,  8,  0,  0,   0, 0, 0, 0);
 
-// ETC1/ETC2 compressed texture internalformats
-FMT_INFO_COMPRESSED(PXFMT_COMPRESSED_RGB8_ETC2,    GL_RGB, 3, false, 4, 4, 8);
+// S3TC/DXT compressed texture internalformats
+FMT_INFO_COMPRESSED(PXFMT_COMPRESSED_RGB_DXT1,    GL_RGB, 3, false, 4, 4, 8);
+FMT_INFO_COMPRESSED(PXFMT_COMPRESSED_RGB_DXT1,   GL_RGBA, 4, false, 4, 4, 8);
+FMT_INFO_COMPRESSED(PXFMT_COMPRESSED_RGB_DXT3,   GL_RGBA, 4, false, 4, 4, 8);
+FMT_INFO_COMPRESSED(PXFMT_COMPRESSED_RGB_DXT5,   GL_RGBA, 4, false, 4, 4, 8);
 
 
 

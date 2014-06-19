@@ -143,16 +143,19 @@ int main(int argc, char **argv)
         src_pxfmt = validate_internal_format(tex.get_ogl_internal_fmt());
         if (src_pxfmt == PXFMT_INVALID)
         {
-            vogl_error_printf("Unsupported KTX compressed format: 0x%X\n", tex.get_ogl_internal_fmt());
+            vogl_error_printf("Unsupported KTX compressed format: 0x%X\n",
+                              tex.get_ogl_internal_fmt());
             return EXIT_FAILURE;
         }
     }
     else
     {
-        src_pxfmt = validate_format_type_combo(tex.get_ogl_fmt(), tex.get_ogl_type());
+        src_pxfmt = validate_format_type_combo(tex.get_ogl_fmt(),
+                                               tex.get_ogl_type());
         if (src_pxfmt == PXFMT_INVALID)
         {
-            vogl_error_printf("Unsupported KTX format/type: 0x%X 0x%X\n", tex.get_ogl_fmt(), tex.get_ogl_type());
+            vogl_error_printf("Unsupported KTX format/type: 0x%X 0x%X\n",
+                              tex.get_ogl_fmt(), tex.get_ogl_type());
             return EXIT_FAILURE;
         }
     }
@@ -207,8 +210,21 @@ int main(int argc, char **argv)
                     pxfmt_sized_format temp_pxfmt = PXFMT_RGBA8_UNORM;
 
                     pxfmt_conversion_status status;
-                    status = pxfmt_convert_pixels(temp_buf.get_ptr(), level_data.get_ptr(), mip_width, mip_height,
-                                                  temp_pxfmt, src_pxfmt, temp_size, src_size);
+                    if (tex.is_compressed())
+                    {
+                        // FIXME/TBD/TODO: CONSIDER MERGING THIS FUNCTION BACK
+                        // INTO THE NEXT FUNCTION (i.e. have one function for
+                        // both compressed and non-compressed src data):
+                        status = pxfmt_decompress_pixels(temp_buf.get_ptr(), level_data.get_ptr(),
+                                                         mip_width, mip_height,
+                                                         temp_pxfmt, src_pxfmt, temp_size, src_size);
+                    }
+                    else
+                    {
+                        status = pxfmt_convert_pixels(temp_buf.get_ptr(), level_data.get_ptr(),
+                                                      mip_width, mip_height,
+                                                      temp_pxfmt, src_pxfmt, temp_size, src_size);
+                    }
 
                     if (status != PXFMT_CONVERSION_SUCCESS)
                     {
