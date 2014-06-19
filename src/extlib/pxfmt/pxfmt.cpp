@@ -699,6 +699,102 @@ static ext_dxt_decomp_func ext_decomp_rgba_dxt5 = NULL;
 
 static void *dxtlibhandle = NULL;
 
+#if defined(_WIN32)
+#else
+#include <dlfcn.h>
+#define HAVE_DLOPEN 1
+#endif
+
+
+
+
+typedef void (*GenericFunc)(void);
+
+/**
+ * Wrapper for dlopen().
+ * Note that 'flags' isn't used at this time.
+ */
+static inline void *
+_mesa_dlopen(const char *libname, int flags)
+{
+#if defined(__blrts)
+   return NULL;
+#elif defined(HAVE_DLOPEN)
+   flags = RTLD_LAZY | RTLD_GLOBAL; /* Overriding flags at this time */
+   return dlopen(libname, flags);
+#elif defined(__MINGW32__)
+   return LoadLibraryA(libname);
+#else
+   return NULL;
+#endif
+}
+
+/**
+ * Wrapper for dlsym() that does a cast to a generic function type,
+ * rather than a void *.  This reduces the number of warnings that are
+ * generated.
+ */
+static inline GenericFunc
+_mesa_dlsym(void *handle, const char *fname)
+{
+   union {
+      void *v;
+      GenericFunc f;
+   } u;
+#if defined(__blrts)
+   u.v = NULL;
+#elif defined(__DJGPP__)
+   /* need '_' prefix on symbol names */
+   char fname2[1000];
+   fname2[0] = '_';
+   strncpy(fname2 + 1, fname, 998);
+   fname2[999] = 0;
+   u.v = dlsym(handle, fname2);
+#elif defined(HAVE_DLOPEN)
+   u.v = dlsym(handle, fname);
+#elif defined(__MINGW32__)
+   u.v = (void *) GetProcAddress(handle, fname);
+#else
+   u.v = NULL;
+#endif
+   return u.f;
+}
+
+/**
+ * Wrapper for dlclose().
+ */
+static inline void
+_mesa_dlclose(void *handle)
+{
+#if defined(__blrts)
+   (void) handle;
+#elif defined(HAVE_DLOPEN)
+   dlclose(handle);
+#elif defined(__MINGW32__)
+   FreeLibrary(handle);
+#else
+   (void) handle;
+#endif
+}
+
+
+
+
+#if defined(_WIN32) || defined(WIN32)
+#define DXTN_LIBNAME "dxtn.dll"
+#define RTLD_LAZY 0
+#define RTLD_GLOBAL 0
+#elif defined(__DJGPP__)
+#define DXTN_LIBNAME "dxtn.dxe"
+#else
+#define DXTN_LIBNAME "libtxc_dxtn.so"
+#endif
+
+
+
+
+
+
 
 void
 _mesa_init_texture_s3tc( struct gl_context *ctx )
@@ -706,12 +802,12 @@ _mesa_init_texture_s3tc( struct gl_context *ctx )
     external_dxt_library_initialized = true;
     if (!dxtlibhandle)
     {
-#if 0
+#if 1
         dxtlibhandle = _mesa_dlopen(DXTN_LIBNAME, 0);
         if (!dxtlibhandle)
         {
-            _mesa_warning(ctx, "couldn't open " DXTN_LIBNAME ", software DXTn "
-                          "compression/decompression unavailable");
+//            _mesa_warning(ctx, "couldn't open " DXTN_LIBNAME ", software DXTn "
+//                          "compression/decompression unavailable");
         }
         else
         {
@@ -729,15 +825,15 @@ _mesa_init_texture_s3tc( struct gl_context *ctx )
                 !ext_decomp_rgba_dxt3 ||
                 !ext_decomp_rgba_dxt5)
             {
-                _mesa_warning(ctx, "couldn't reference all symbols in "
-                              DXTN_LIBNAME ", software DXTn compression/decompression "
-                              "unavailable");
+//                _mesa_warning(ctx, "couldn't reference all symbols in "
+//                              DXTN_LIBNAME ", software DXTn compression/decompression "
+//                              "unavailable");
 #endif
                 ext_decomp_rgb_dxt1 = NULL;
                 ext_decomp_rgba_dxt1 = NULL;
                 ext_decomp_rgba_dxt3 = NULL;
                 ext_decomp_rgba_dxt5 = NULL;
-#if 0
+#if 1
                 _mesa_dlclose(dxtlibhandle);
             }
         }
