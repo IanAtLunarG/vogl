@@ -569,9 +569,9 @@ FMT_INFO(PXFMT_D32_FLOAT_S8_UINT,GL_DEPTH_STENCIL,float, double,2,8,true, false,
 
 // S3TC/DXT compressed texture internalformats
 FMT_INFO_COMPRESSED(PXFMT_COMPRESSED_RGB_DXT1,    GL_RGB, 3, false, 4, 4, 8);
-FMT_INFO_COMPRESSED(PXFMT_COMPRESSED_RGB_DXT1,   GL_RGBA, 4, false, 4, 4, 8);
-FMT_INFO_COMPRESSED(PXFMT_COMPRESSED_RGB_DXT3,   GL_RGBA, 4, false, 4, 4, 8);
-FMT_INFO_COMPRESSED(PXFMT_COMPRESSED_RGB_DXT5,   GL_RGBA, 4, false, 4, 4, 8);
+FMT_INFO_COMPRESSED(PXFMT_COMPRESSED_RGBA_DXT1,  GL_RGBA, 4, false, 4, 4, 8);
+FMT_INFO_COMPRESSED(PXFMT_COMPRESSED_RGBA_DXT3,  GL_RGBA, 4, false, 4, 4, 8);
+FMT_INFO_COMPRESSED(PXFMT_COMPRESSED_RGBA_DXT5,  GL_RGBA, 4, false, 4, 4, 8);
 
 
 
@@ -682,6 +682,103 @@ void get_compression_block_info(const uint32 width,
 #include "pxfmt_case_statements.inl"
         case PXFMT_INVALID: break;
     }
+}
+
+
+static bool external_dxt_library_initialized = false;
+static bool external_dxt_functions_loaded = false;
+
+typedef void (*ext_dxt_decomp_func)(uint32 src_row_stride,
+                                    const uint8 *pSrc, int32 x, GLint y,
+                                    void *pDst);
+
+static ext_dxt_decomp_func ext_decomp_rgb_dxt1 = NULL;
+static ext_dxt_decomp_func ext_decomp_rgba_dxt1 = NULL;
+static ext_dxt_decomp_func ext_decomp_rgba_dxt3 = NULL;
+static ext_dxt_decomp_func ext_decomp_rgba_dxt5 = NULL;
+
+static void *dxtlibhandle = NULL;
+
+
+void
+_mesa_init_texture_s3tc( struct gl_context *ctx )
+{
+    external_dxt_library_initialized = true;
+    if (!dxtlibhandle)
+    {
+#if 0
+        dxtlibhandle = _mesa_dlopen(DXTN_LIBNAME, 0);
+        if (!dxtlibhandle)
+        {
+            _mesa_warning(ctx, "couldn't open " DXTN_LIBNAME ", software DXTn "
+                          "compression/decompression unavailable");
+        }
+        else
+        {
+            ext_decomp_rgb_dxt1 = (ext_dxt_decomp_func)
+                _mesa_dlsym(dxtlibhandle, "fetch_2d_texel_rgb_dxt1");
+            ext_decomp_rgba_dxt1 = (ext_dxt_decomp_func)
+                _mesa_dlsym(dxtlibhandle, "fetch_2d_texel_rgba_dxt1");
+            ext_decomp_rgba_dxt3 = (ext_dxt_decomp_func)
+                _mesa_dlsym(dxtlibhandle, "fetch_2d_texel_rgba_dxt3");
+            ext_decomp_rgba_dxt5 = (ext_dxt_decomp_func)
+                _mesa_dlsym(dxtlibhandle, "fetch_2d_texel_rgba_dxt5");
+
+            if (!ext_decomp_rgb_dxt1 ||
+                !ext_decomp_rgba_dxt1 ||
+                !ext_decomp_rgba_dxt3 ||
+                !ext_decomp_rgba_dxt5)
+            {
+                _mesa_warning(ctx, "couldn't reference all symbols in "
+                              DXTN_LIBNAME ", software DXTn compression/decompression "
+                              "unavailable");
+#endif
+                ext_decomp_rgb_dxt1 = NULL;
+                ext_decomp_rgba_dxt1 = NULL;
+                ext_decomp_rgba_dxt3 = NULL;
+                ext_decomp_rgba_dxt5 = NULL;
+#if 0
+                _mesa_dlclose(dxtlibhandle);
+            }
+        }
+#endif
+    }
+}
+
+
+void decompress_dxt(float *intermediate, const void *pSrc,
+                    uint32 row_stride, int x, int y,
+                    const pxfmt_sized_format fmt)
+{
+    if (!external_dxt_library_initialized)
+   {
+   }
+   if (external_dxt_functions_loaded)
+   {
+      uint8 tex[4];
+      switch (fmt)
+      {
+      case PXFMT_COMPRESSED_RGB_DXT1:
+          ext_decomp_rgb_dxt1(row_stride, (const uint8 *) pSrc, x, y, tex);
+          break;
+      case PXFMT_COMPRESSED_RGBA_DXT1:
+          ext_decomp_rgba_dxt1(row_stride, (const uint8 *) pSrc, x, y, tex);
+          break;
+      case PXFMT_COMPRESSED_RGBA_DXT3:
+          ext_decomp_rgba_dxt3(row_stride, (const uint8 *) pSrc, x, y, tex);
+          break;
+      case PXFMT_COMPRESSED_RGBA_DXT5:
+          ext_decomp_rgba_dxt5(row_stride, (const uint8 *) pSrc, x, y, tex);
+          break;
+      default:
+          break;
+      }
+#define UBYTE_TO_FLOAT(u) ((float) (u) / 255.0)
+      intermediate[0] = UBYTE_TO_FLOAT(tex[0]);
+      intermediate[1] = UBYTE_TO_FLOAT(tex[1]);
+      intermediate[2] = UBYTE_TO_FLOAT(tex[2]);
+      intermediate[3] = UBYTE_TO_FLOAT(tex[3]);
+   }
 }
 
 
@@ -2293,8 +2390,18 @@ pxfmt_sized_format validate_internal_format(const GLenum internalformat)
 {
     switch (internalformat)
     {
+    case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
+        return PXFMT_COMPRESSED_RGB_DXT1;
+    case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
+        return PXFMT_COMPRESSED_RGBA_DXT1;
+    case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT:
+        return PXFMT_COMPRESSED_RGBA_DXT3;
+    case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
+        return PXFMT_COMPRESSED_RGBA_DXT5;
+#if 0
     case GL_COMPRESSED_RGB8_ETC2:
         return PXFMT_COMPRESSED_RGB8_ETC2;
+#endif
     default:
         // If we get to here, this is an unsupported compressed-texture
         // internalformat:
