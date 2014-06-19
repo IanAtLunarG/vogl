@@ -2553,6 +2553,7 @@ pxfmt_conversion_status pxfmt_convert_pixels(void *pDst,
 // intermediate values, and then converted from that to the destination.  As
 // long as the intermediate values contain enough precision, etc, values can be
 // converted in a loss-less fashion.
+#ifdef OLD_CODE
 pxfmt_conversion_status pxfmt_decompress_pixels(void *pDst,
                                                 const void *pSrc,
                                                 const int width,
@@ -2675,3 +2676,110 @@ pxfmt_conversion_status pxfmt_decompress_pixels(void *pDst,
 
     return PXFMT_CONVERSION_SUCCESS;
 }
+#else  // OLD_CODE
+pxfmt_conversion_status
+pxfmt_decompress_pixels(void *pDst,
+                        const void *pSrc,
+                        const int width,
+                        const int height,
+                        const pxfmt_sized_format dst_fmt,
+                        const pxfmt_sized_format src_fmt,
+                        size_t dst_size,
+                        size_t src_size)
+{
+    // Before proceeding, ensure that we are dealing with supported formats:
+    if (dst_fmt == PXFMT_INVALID)
+    {
+        return PXFMT_CONVERSION_UNSUPPORTED_DST;
+    }
+    else if (src_fmt == PXFMT_INVALID)
+    {
+        return PXFMT_CONVERSION_UNSUPPORTED_SRC;
+    }
+
+    // Get the per-pixel and per-row strides for the dst:
+    uint32 dst_pixel_stride;
+    uint32 dst_row_stride;
+    bool dst_needs_fp_intermediate;
+    get_pxfmt_info(width, dst_pixel_stride, dst_row_stride,
+                    dst_needs_fp_intermediate, dst_fmt);
+
+    // Get the per-compression-block info for the src:
+    uint32 src_block_width;
+    uint32 src_block_height;
+    uint32 src_block_perblock_stride;
+    uint32 src_block_perrow_stride;
+    get_compression_block_info(width, src_block_width, src_block_height,
+                               src_block_perblock_stride,
+                               src_block_perrow_stride,
+                               src_fmt);
+
+    // Now that we have info about the src's per-compression-block, also
+    // determine the dst's stride within a row of blocks, and between rows of
+    // blocks:
+    uint32 dst_block_perblock_stride = dst_pixel_stride * src_block_width;
+    uint32 dst_block_perrow_stride = dst_row_stride * src_block_height;
+
+    // Ensure that the values we got make sense, including that the
+    // row_stride*width match the given size:
+    if (!((dst_pixel_stride > 0) ||
+          (dst_row_stride > 0) ||
+          (dst_block_perblock_stride > 0) ||
+          (dst_block_perrow_stride > 0) ||
+          (src_block_width > 0) ||
+          (src_block_height > 0) ||
+          (src_block_perblock_stride > 0) ||
+          (src_block_perrow_stride > 0) ||
+          (true == dst_needs_fp_intermediate)))
+    {
+        return PXFMT_CONVERSION_UNKNOWN_ERROR;
+    }
+// FIXME - REMOVE THIS #ifdef
+#ifdef TEMPORARILY_DISABLE_SIZE_CHECK
+    // Now check that the row_stride*width match the given size:
+    if ((height * dst_row_stride) != dst_size)
+    {
+        return PXFMT_CONVERSION_BAD_SIZE_DST;
+    }
+    else if ((height * src_row_stride) != src_size)
+    {
+        return PXFMT_CONVERSION_BAD_SIZE_SRC;
+    }
+#endif // TEMPORARILY_DISABLE_SIZE_CHECK
+
+    // In order to handle 32-bit normalized values, we need to use
+    // double-precision floating-point intermediate values:
+    double intermediate[4];
+    float intermediate_as_float[4];
+
+    // Use local pointers to the src and dst (both to increment within and
+    // between rows) in order to properly deal with all strides:
+    uint8 *dst, *dst_row;
+    dst = dst_row = (uint8 *) pDst;
+
+    for (int y = 0 ; y < height ; y++)
+    {
+        for (int x = 0 ; x < width ; x++)
+        {
+            // Decompress a src pixel:
+// FIXME: ADD A CALL TO DECOMPRESSION CODE!!!
+            intermediate_as_float[0] = 0.0;
+            intermediate_as_float[1] = 0.0;
+            intermediate_as_float[2] = 0.0;
+            intermediate_as_float[3] = 1.0;
+            // Copy the intermediate value to a double:
+            intermediate[0] = intermediate_as_float[0];
+            intermediate[1] = intermediate_as_float[1];
+            intermediate[2] = intermediate_as_float[2];
+            intermediate[3] = intermediate_as_float[3];
+            // Convert the intermediate value to the dst format-type
+            // combination:
+            from_intermediate(dst, intermediate, dst_fmt);
+            dst += dst_pixel_stride;
+        }
+        dst = dst_row += dst_row_stride;
+    }
+
+    return PXFMT_CONVERSION_SUCCESS;
+}
+#endif // OLD_CODE
