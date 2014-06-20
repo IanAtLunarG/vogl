@@ -797,7 +797,7 @@ _mesa_dlclose(void *handle)
 
 
 void
-_mesa_init_texture_s3tc( struct gl_context *ctx )
+init_external_dxt_library()
 {
     external_dxt_library_initialized = true;
     if (!dxtlibhandle)
@@ -836,6 +836,10 @@ _mesa_init_texture_s3tc( struct gl_context *ctx )
 #if 1
                 _mesa_dlclose(dxtlibhandle);
             }
+            else
+            {
+                external_dxt_functions_loaded = true;
+            }
         }
 #endif
     }
@@ -847,34 +851,35 @@ void decompress_dxt(float *intermediate, const void *pSrc,
                     const pxfmt_sized_format fmt)
 {
     if (!external_dxt_library_initialized)
-   {
-   }
-   if (external_dxt_functions_loaded)
-   {
-      uint8 tex[4];
-      switch (fmt)
-      {
-      case PXFMT_COMPRESSED_RGB_DXT1:
-          ext_decomp_rgb_dxt1(row_stride, (const uint8 *) pSrc, x, y, tex);
-          break;
-      case PXFMT_COMPRESSED_RGBA_DXT1:
-          ext_decomp_rgba_dxt1(row_stride, (const uint8 *) pSrc, x, y, tex);
-          break;
-      case PXFMT_COMPRESSED_RGBA_DXT3:
-          ext_decomp_rgba_dxt3(row_stride, (const uint8 *) pSrc, x, y, tex);
-          break;
-      case PXFMT_COMPRESSED_RGBA_DXT5:
-          ext_decomp_rgba_dxt5(row_stride, (const uint8 *) pSrc, x, y, tex);
-          break;
-      default:
-          break;
-      }
-#define UBYTE_TO_FLOAT(u) ((float) (u) / 255.0)
-      intermediate[0] = UBYTE_TO_FLOAT(tex[0]);
-      intermediate[1] = UBYTE_TO_FLOAT(tex[1]);
-      intermediate[2] = UBYTE_TO_FLOAT(tex[2]);
-      intermediate[3] = UBYTE_TO_FLOAT(tex[3]);
-   }
+    {
+        init_external_dxt_library();
+    }
+    if (external_dxt_functions_loaded)
+    {
+        uint8 tex[4];
+        switch (fmt)
+        {
+        case PXFMT_COMPRESSED_RGB_DXT1:
+            ext_decomp_rgb_dxt1(row_stride, (const uint8 *) pSrc, x, y, tex);
+            break;
+        case PXFMT_COMPRESSED_RGBA_DXT1:
+            ext_decomp_rgba_dxt1(row_stride, (const uint8 *) pSrc, x, y, tex);
+            break;
+        case PXFMT_COMPRESSED_RGBA_DXT3:
+            ext_decomp_rgba_dxt3(row_stride, (const uint8 *) pSrc, x, y, tex);
+            break;
+        case PXFMT_COMPRESSED_RGBA_DXT5:
+            ext_decomp_rgba_dxt5(row_stride, (const uint8 *) pSrc, x, y, tex);
+            break;
+        default:
+            break;
+        }
+#define UBYTE_TO_FLOAT(u) ((float) (u) / (float) 255.0)
+        intermediate[0] = UBYTE_TO_FLOAT(tex[0]);
+        intermediate[1] = UBYTE_TO_FLOAT(tex[1]);
+        intermediate[2] = UBYTE_TO_FLOAT(tex[2]);
+        intermediate[3] = UBYTE_TO_FLOAT(tex[3]);
+    }
 }
 
 
@@ -2832,7 +2837,6 @@ pxfmt_decompress_pixels(void *pDst,
     // In order to handle 32-bit normalized values, we need to use
     // double-precision floating-point intermediate values:
     double intermediate[4];
-    float intermediate_as_float[4];
 
     // Use local pointers to the src and dst (both to increment within and
     // between rows) in order to properly deal with all strides:
@@ -2843,17 +2847,15 @@ pxfmt_decompress_pixels(void *pDst,
     {
         for (int x = 0 ; x < width ; x++)
         {
+            float ifloat[4] = {0.0, 0.0, 0.0, 1.0};
             // Decompress a src pixel:
-// FIXME: ADD A CALL TO DECOMPRESSION CODE!!!
-            intermediate_as_float[0] = 0.0;
-            intermediate_as_float[1] = 0.0;
-            intermediate_as_float[2] = 0.0;
-            intermediate_as_float[3] = 1.0;
+            decompress_dxt(ifloat, pSrc, src_block_perrow_stride, x, y,
+                           src_fmt);
             // Copy the intermediate value to a double:
-            intermediate[0] = intermediate_as_float[0];
-            intermediate[1] = intermediate_as_float[1];
-            intermediate[2] = intermediate_as_float[2];
-            intermediate[3] = intermediate_as_float[3];
+            intermediate[0] = ifloat[0];
+            intermediate[1] = ifloat[1];
+            intermediate[2] = ifloat[2];
+            intermediate[3] = ifloat[3];
             // Convert the intermediate value to the dst format-type
             // combination:
             from_intermediate(dst, intermediate, dst_fmt);
