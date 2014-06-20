@@ -37,6 +37,8 @@
 #include "pxfmt.h"
 #include <cmath>  // For std::floor()
 
+#include <stdio.h>
+
 // The internal data structures and functions are put into the following
 // unnamed namespace, so that they aren't externally visible to this file:
 namespace
@@ -570,8 +572,8 @@ FMT_INFO(PXFMT_D32_FLOAT_S8_UINT,GL_DEPTH_STENCIL,float, double,2,8,true, false,
 // S3TC/DXT compressed texture internalformats
 FMT_INFO_COMPRESSED(PXFMT_COMPRESSED_RGB_DXT1,    GL_RGB, 3, false, 4, 4, 8);
 FMT_INFO_COMPRESSED(PXFMT_COMPRESSED_RGBA_DXT1,  GL_RGBA, 4, false, 4, 4, 8);
-FMT_INFO_COMPRESSED(PXFMT_COMPRESSED_RGBA_DXT3,  GL_RGBA, 4, false, 4, 4, 8);
-FMT_INFO_COMPRESSED(PXFMT_COMPRESSED_RGBA_DXT5,  GL_RGBA, 4, false, 4, 4, 8);
+FMT_INFO_COMPRESSED(PXFMT_COMPRESSED_RGBA_DXT3,  GL_RGBA, 4, false, 4, 4, 16);
+FMT_INFO_COMPRESSED(PXFMT_COMPRESSED_RGBA_DXT5,  GL_RGBA, 4, false, 4, 4, 16);
 
 
 
@@ -874,11 +876,16 @@ void decompress_dxt(float *intermediate, const void *pSrc,
         default:
             break;
         }
+        printf("decompress_dxt(stride=%d, x=%d, y=%d) = {%d, %d, %d, %d}\n",
+               row_stride, x, y, tex[0], tex[1], tex[2], tex[3]);
 #define UBYTE_TO_FLOAT(u) ((float) (u) / (float) 255.0)
         intermediate[0] = UBYTE_TO_FLOAT(tex[0]);
         intermediate[1] = UBYTE_TO_FLOAT(tex[1]);
         intermediate[2] = UBYTE_TO_FLOAT(tex[2]);
         intermediate[3] = UBYTE_TO_FLOAT(tex[3]);
+        printf("  intermediate[] = {%f, %f, %f, %f}\n",
+               intermediate[0], intermediate[1],
+               intermediate[2], intermediate[3]);
     }
 }
 
@@ -2800,6 +2807,7 @@ pxfmt_decompress_pixels(void *pDst,
                                src_block_perblock_stride,
                                src_block_perrow_stride,
                                src_fmt);
+src_block_perrow_stride /= 4;
 
     // Now that we have info about the src's per-compression-block, also
     // determine the dst's stride within a row of blocks, and between rows of
@@ -2859,6 +2867,8 @@ pxfmt_decompress_pixels(void *pDst,
             // Convert the intermediate value to the dst format-type
             // combination:
             from_intermediate(dst, intermediate, dst_fmt);
+uint32 *dst_as_uint32 = (uint32 *) dst;
+printf("  *dst = 0x%08x\n", *dst_as_uint32);
             dst += dst_pixel_stride;
         }
         dst = dst_row += dst_row_stride;
