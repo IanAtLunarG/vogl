@@ -659,7 +659,10 @@ void get_compression_block_info(const uint32 width,
     // Just in case "width" isn't a multiple of "block_perblock_stride",
     // potentially scale it up to a multiple of "block_perblock_stride":
     uint32 scaled_width = round_to_block_size(width, block_perblock_stride);
-    block_perrow_stride = block_perblock_stride * (scaled_width / block_width);
+    // The per-row stride is really per "row" (e.g. if the block is 4x4, we
+    // need to divide by the block height of 4):
+    block_perrow_stride =
+        block_perblock_stride * (scaled_width / block_width) / block_height;
 }
 
 inline
@@ -2813,7 +2816,6 @@ pxfmt_decompress_pixels(void *pDst,
                                src_block_perblock_stride,
                                src_block_perrow_stride,
                                src_fmt);
-src_block_perrow_stride /= 4;
 
     // Now that we have info about the src's per-compression-block, also
     // determine the dst's stride within a row of blocks, and between rows of
