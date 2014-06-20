@@ -37,7 +37,9 @@
 #include "pxfmt.h"
 #include <cmath>  // For std::floor()
 
+#ifdef DECOMPRESS_DEBUG
 #include <stdio.h>
+#endif // DECOMPRESS_DEBUG
 
 // The internal data structures and functions are put into the following
 // unnamed namespace, so that they aren't externally visible to this file:
@@ -876,16 +878,20 @@ void decompress_dxt(float *intermediate, const void *pSrc,
         default:
             break;
         }
+#ifdef DECOMPRESS_DEBUG
         printf("decompress_dxt(stride=%d, x=%d, y=%d) = {%d, %d, %d, %d}\n",
                row_stride, x, y, tex[0], tex[1], tex[2], tex[3]);
+#endif // DECOMPRESS_DEBUG
 #define UBYTE_TO_FLOAT(u) ((float) (u) / (float) 255.0)
         intermediate[0] = UBYTE_TO_FLOAT(tex[0]);
         intermediate[1] = UBYTE_TO_FLOAT(tex[1]);
         intermediate[2] = UBYTE_TO_FLOAT(tex[2]);
         intermediate[3] = UBYTE_TO_FLOAT(tex[3]);
+#ifdef DECOMPRESS_DEBUG
         printf("  intermediate[] = {%f, %f, %f, %f}\n",
                intermediate[0], intermediate[1],
                intermediate[2], intermediate[3]);
+#endif // DECOMPRESS_DEBUG
     }
 }
 
@@ -2867,8 +2873,10 @@ src_block_perrow_stride /= 4;
             // Convert the intermediate value to the dst format-type
             // combination:
             from_intermediate(dst, intermediate, dst_fmt);
-uint32 *dst_as_uint32 = (uint32 *) dst;
-printf("  *dst = 0x%08x\n", *dst_as_uint32);
+#ifdef DECOMPRESS_DEBUG
+            uint32 *dst_as_uint32 = (uint32 *) dst;
+            printf("  *dst = 0x%08x\n", *dst_as_uint32);
+#endif // DECOMPRESS_DEBUG
             dst += dst_pixel_stride;
         }
         dst = dst_row += dst_row_stride;
