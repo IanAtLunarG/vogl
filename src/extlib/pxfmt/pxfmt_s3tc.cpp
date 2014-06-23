@@ -1,6 +1,8 @@
 /**************************************************************************
  *
  * Copyright 2014 LunarG, Inc.
+ * Copyright (C) 1999-2007  Brian Paul   All Rights Reserved.
+ * Copyright (c) 2008 VMware, Inc.
  * All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,7 +23,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  *
- * This file was originally authored by Ian Elliott (ian@lunarg.com).
+ * This file was ported to pxfmt (from "texcompress_s3tc.c" in Mesa3D) by Ian
+ * Elliott (ian@lunarg.com).
  *
  **************************************************************************/
 
@@ -42,6 +45,7 @@
 #endif // DECOMPRESS_DEBUG
 
 #include "pxfmt_internal.h"
+#include "pxfmt_dlopen.h"
 
 
 static bool external_dxt_library_initialized = false;
@@ -58,86 +62,6 @@ static ext_dxt_decomp_func ext_decomp_rgba_dxt5 = NULL;
 
 static void *dxtlibhandle = NULL;
 
-#if defined(_WIN32)
-#else
-#include <dlfcn.h>
-#define HAVE_DLOPEN 1
-#endif
-
-
-
-
-typedef void (*GenericFunc)(void);
-
-/**
- * Wrapper for dlopen().
- * Note that 'flags' isn't used at this time.
- */
-static inline void *
-_mesa_dlopen(const char *libname, int flags)
-{
-#if defined(__blrts)
-   return NULL;
-#elif defined(HAVE_DLOPEN)
-   flags = RTLD_LAZY | RTLD_GLOBAL; /* Overriding flags at this time */
-   return dlopen(libname, flags);
-#elif defined(__MINGW32__)
-   return LoadLibraryA(libname);
-#else
-   return NULL;
-#endif
-}
-
-/**
- * Wrapper for dlsym() that does a cast to a generic function type,
- * rather than a void *.  This reduces the number of warnings that are
- * generated.
- */
-static inline GenericFunc
-_mesa_dlsym(void *handle, const char *fname)
-{
-   union {
-      void *v;
-      GenericFunc f;
-   } u;
-#if defined(__blrts)
-   u.v = NULL;
-#elif defined(__DJGPP__)
-   /* need '_' prefix on symbol names */
-   char fname2[1000];
-   fname2[0] = '_';
-   strncpy(fname2 + 1, fname, 998);
-   fname2[999] = 0;
-   u.v = dlsym(handle, fname2);
-#elif defined(HAVE_DLOPEN)
-   u.v = dlsym(handle, fname);
-#elif defined(__MINGW32__)
-   u.v = (void *) GetProcAddress(handle, fname);
-#else
-   u.v = NULL;
-#endif
-   return u.f;
-}
-
-/**
- * Wrapper for dlclose().
- */
-static inline void
-_mesa_dlclose(void *handle)
-{
-#if defined(__blrts)
-   (void) handle;
-#elif defined(HAVE_DLOPEN)
-   dlclose(handle);
-#elif defined(__MINGW32__)
-   FreeLibrary(handle);
-#else
-   (void) handle;
-#endif
-}
-
-
-
 
 #if defined(_WIN32) || defined(WIN32)
 #define DXTN_LIBNAME "dxtn.dll"
@@ -150,25 +74,14 @@ _mesa_dlclose(void *handle)
 #endif
 
 
-
-
-
-
-
 void
 init_external_dxt_library()
 {
     external_dxt_library_initialized = true;
     if (!dxtlibhandle)
     {
-#if 1
         dxtlibhandle = _mesa_dlopen(DXTN_LIBNAME, 0);
-        if (!dxtlibhandle)
-        {
-//            _mesa_warning(ctx, "couldn't open " DXTN_LIBNAME ", software DXTn "
-//                          "compression/decompression unavailable");
-        }
-        else
+        if (dxtlibhandle)
         {
             ext_decomp_rgb_dxt1 = (ext_dxt_decomp_func)
                 _mesa_dlsym(dxtlibhandle, "fetch_2d_texel_rgb_dxt1");
@@ -184,15 +97,12 @@ init_external_dxt_library()
                 !ext_decomp_rgba_dxt3 ||
                 !ext_decomp_rgba_dxt5)
             {
-//                _mesa_warning(ctx, "couldn't reference all symbols in "
-//                              DXTN_LIBNAME ", software DXTn compression/decompression "
-//                              "unavailable");
-#endif
+                // Couldn't reference all symbols in the external library, so
+                // don't use any of them:
                 ext_decomp_rgb_dxt1 = NULL;
                 ext_decomp_rgba_dxt1 = NULL;
                 ext_decomp_rgba_dxt3 = NULL;
                 ext_decomp_rgba_dxt5 = NULL;
-#if 1
                 _mesa_dlclose(dxtlibhandle);
             }
             else
@@ -200,7 +110,6 @@ init_external_dxt_library()
                 external_dxt_functions_loaded = true;
             }
         }
-#endif
     }
 }
 

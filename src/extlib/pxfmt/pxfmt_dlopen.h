@@ -1,5 +1,7 @@
 /**************************************************************************
  *
+ * Copyright 2014 LunarG, Inc.
+ * Copyright (C) 1999-2008  Brian Paul   All Rights Reserved.
  * All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,17 +22,69 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  *
- * This file was originally authored by Ian Elliott (ian@lunarg.com).
+ * This file was ported to pxfmt (from "dlopen.h" in Mesa3D) by Ian Elliott
+ * (ian@lunarg.com).
  *
  **************************************************************************/
 
-#ifndef PXFMT_S3TC_H
-#define PXFMT_S3TC_H
+#ifndef PXFMT_DLOPEN_H
+#define PXFMT_DLOPEN_H
 
-#include "pxfmt_internal.h"
+#if defined(_WIN32)
+#include <windows.h>
+#else
+#include <dlfcn.h>
+#define HAVE_DLOPEN 1
+#endif
 
-void decompress_dxt(float *intermediate, const void *pSrc,
-                    uint32 row_stride, int x, int y,
-                    const pxfmt_sized_format fmt);
+typedef void (*GenericFunc)(void);
 
-#endif // PXFMT_S3TC_H
+/**
+ * Wrapper for dlopen().
+ * Note that 'flags' isn't used at this time.
+ */
+static inline void *
+_mesa_dlopen(const char *libname, int flags)
+{
+#if defined(HAVE_DLOPEN)
+   flags = RTLD_LAZY | RTLD_GLOBAL; /* Overriding flags at this time */
+   return dlopen(libname, flags);
+#else
+   return NULL;
+#endif
+}
+
+/**
+ * Wrapper for dlsym() that does a cast to a generic function type,
+ * rather than a void *.  This reduces the number of warnings that are
+ * generated.
+ */
+static inline GenericFunc
+_mesa_dlsym(void *handle, const char *fname)
+{
+   union {
+      void *v;
+      GenericFunc f;
+   } u;
+#if defined(HAVE_DLOPEN)
+   u.v = dlsym(handle, fname);
+#else
+   u.v = NULL;
+#endif
+   return u.f;
+}
+
+/**
+ * Wrapper for dlclose().
+ */
+static inline void
+_mesa_dlclose(void *handle)
+{
+#if defined(HAVE_DLOPEN)
+   dlclose(handle);
+#else
+   (void) handle;
+#endif
+}
+
+#endif // PXFMT_DLOPEN_H
