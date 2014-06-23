@@ -1689,6 +1689,25 @@ void query_pxfmt_sized_format(bool *has_red,   bool *has_green,
 }
 
 
+// This function calls the correct decompression function for a given PXFMT:
+inline
+void decompress(float *intermediate, const void *pSrc,
+                uint32 row_stride, int x, int y,
+                const pxfmt_sized_format fmt)
+{
+    switch (fmt)
+    {
+    case PXFMT_COMPRESSED_RGB_DXT1:
+    case PXFMT_COMPRESSED_RGBA_DXT1:
+    case PXFMT_COMPRESSED_RGBA_DXT3:
+    case PXFMT_COMPRESSED_RGBA_DXT5:
+        decompress_dxt(intermediate, pSrc, row_stride, x, y, fmt);
+        break;
+    default:
+        break;
+    }
+}
+
 
 } // unamed namespace
 
@@ -2657,8 +2676,7 @@ pxfmt_decompress_pixels(void *pDst,
         {
             float ifloat[4] = {0.0, 0.0, 0.0, 1.0};
             // Decompress a src pixel:
-            decompress_dxt(ifloat, pSrc, src_block_perrow_stride, x, y,
-                           src_fmt);
+            decompress(ifloat, pSrc, src_block_perrow_stride, x, y, src_fmt);
             // Copy the intermediate value to a double:
             intermediate[0] = ifloat[0];
             intermediate[1] = ifloat[1];
