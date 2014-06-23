@@ -277,7 +277,7 @@ template <pxfmt_sized_format F> struct pxfmt_per_fmt_info { };
                   in0, in1, in2, in3,                                   \
                   nbits0, nbits1, nbits2, nbits3,                       \
                   shift0, shift1, shift2, shift3,                       \
-                  false, 0, 0, 0);                                      \
+                  false, 0, 0, 1);                                      \
     const pxfmt_small_fp pxfmt_per_fmt_info<F>::m_small_fp[] =          \
         {NON_FP, NON_FP, NON_FP, NON_FP};
 
@@ -294,7 +294,7 @@ template <pxfmt_sized_format F> struct pxfmt_per_fmt_info { };
                   in0, in1, in2, in3,                                   \
                   nbits0, nbits1, nbits2, nbits3,                       \
                   shift0, shift1, shift2, shift3,                       \
-                  false, 0, 0, 0);                                      \
+                  false, 0, 0, 1);                                      \
     const pxfmt_small_fp pxfmt_per_fmt_info<F>::m_small_fp[] =          \
             {sfp0, sfp1, sfp2, sfp3};
 
@@ -623,6 +623,7 @@ void get_pxfmt_info(const uint32 width, uint32 &pixel_stride,
     }
 }
 
+inline
 uint32 round_to_block_size(uint32 width, uint32 block_size)
 {
     assert(block_size > 0);
@@ -2316,6 +2317,10 @@ pxfmt_sized_format validate_format_type_combo(const GLenum format,
 // combination isn't supported, PXFMT_INVALID is returned.
 pxfmt_sized_format validate_internal_format(const GLenum internalformat)
 {
+// FIXME: REMOVE THIS #if ONCE WE SUPPORT ANY NON-DXT PXFMT ON WINDOWS:
+#if defined(_WIN32)
+    return PXFMT_INVALID;
+#else  // defined(_WIN32)
     switch (internalformat)
     {
 #if defined(_WIN32)
@@ -2338,6 +2343,7 @@ pxfmt_sized_format validate_internal_format(const GLenum internalformat)
         // internalformat:
         return PXFMT_INVALID;
     }
+#endif // defined(_WIN32)
 }
 
 
