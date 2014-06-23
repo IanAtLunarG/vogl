@@ -2318,6 +2318,8 @@ pxfmt_sized_format validate_internal_format(const GLenum internalformat)
 {
     switch (internalformat)
     {
+#if defined(_WIN32)
+#else  // defined(_WIN32)
     case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
         return PXFMT_COMPRESSED_RGB_DXT1;
     case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
@@ -2326,6 +2328,7 @@ pxfmt_sized_format validate_internal_format(const GLenum internalformat)
         return PXFMT_COMPRESSED_RGBA_DXT3;
     case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
         return PXFMT_COMPRESSED_RGBA_DXT5;
+#endif // defined(_WIN32)
 #if 0
     case GL_COMPRESSED_RGB8_ETC2:
         return PXFMT_COMPRESSED_RGB8_ETC2;
