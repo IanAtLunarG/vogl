@@ -41,7 +41,6 @@
 #endif // DECOMPRESS_DEBUG
 
 #include "pxfmt_internal.h"
-#include "pxfmt_s3tc.h"
 
 // The internal data structures and functions are put into the following
 // unnamed namespace, so that they aren't externally visible to this file:

@@ -36,7 +36,16 @@ typedef signed short int16;
 typedef unsigned int uint32;
 typedef signed int int32;
 
-#ifndef PORTED_FROM_MESA
+
+void decompress_dxt(float *intermediate, const void *pSrc,
+                    uint32 row_stride, int x, int y,
+                    const pxfmt_sized_format fmt);
+
+void decompress_fxt1(float *intermediate, const void *pSrc,
+                     uint32 row_stride, int x, int y,
+                     const pxfmt_sized_format fmt);
+
+#ifdef PORTED_FROM_MESA
 // The following macros are either copied from Mesa3D, or a new implementation
 // of a Mesa3D interface is provided here in order to provide an environment
 // similar to that found in Mesa3D.  This can help minimize changes to the

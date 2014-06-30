@@ -26,6 +26,13 @@
  *
  **************************************************************************/
 
+#include <GL/gl.h>
+#include <GL/glext.h>
+#include "pxfmt.h"
+
+#define PORTED_FROM_MESA
+#include "pxfmt_internal.h"
+
 #if 0
 #include "glheader.h"
 #include "imports.h"

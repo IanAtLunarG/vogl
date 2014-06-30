@@ -43,6 +43,7 @@
 #include <stdio.h>
 #endif // DECOMPRESS_DEBUG
 
+#define PORTED_FROM_MESA
 #include "pxfmt_internal.h"
 #include "pxfmt_dlopen.h"
 
