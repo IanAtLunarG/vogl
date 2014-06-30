@@ -319,15 +319,17 @@ enum pxfmt_sized_format
     PXFMT_D24_UNORM_S8_UINT,
     PXFMT_D32_FLOAT_S8_UINT,
 
-// ETC1/ETC2 compressed texture internalformats
+// FXT1 compressed texture internalformats
+    PXFMT_COMPRESSED_RGB_FXT1,
+    PXFMT_COMPRESSED_RGBA_FXT1,
+
+// S3TC/DXT compressed texture internalformats
     PXFMT_COMPRESSED_RGB_DXT1,
     PXFMT_COMPRESSED_RGBA_DXT1,
     PXFMT_COMPRESSED_RGBA_DXT3,
     PXFMT_COMPRESSED_RGBA_DXT5,
 
-// FXT1 compressed texture internalformats
-    PXFMT_COMPRESSED_RGB_FXT1,
-    PXFMT_COMPRESSED_RGBA_FXT1,
+// ETC1/ETC2 compressed texture internalformats
 };
 
 

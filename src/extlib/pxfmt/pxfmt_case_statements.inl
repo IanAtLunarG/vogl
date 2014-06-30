@@ -290,9 +290,15 @@ CASE_STATEMENT(PXFMT_S32_FLOAT);
 CASE_STATEMENT(PXFMT_D24_UNORM_S8_UINT);
 CASE_STATEMENT(PXFMT_D32_FLOAT_S8_UINT);
 
-// ETC1/ETC2 compressed texture internalformats
+// FXT1 compressed texture internalformats
+//CASE_STATEMENT(PXFMT_COMPRESSED_RGB_FXT1);
+//CASE_STATEMENT(PXFMT_COMPRESSED_RGBA_FXT1);
+
+// S3TC/DXT compressed texture internalformats
 //   NOTE: Compressed cases aren't needed in the normal switch statements:
 //CASE_STATEMENT(PXFMT_COMPRESSED_RGB_DXT1);
 //CASE_STATEMENT(PXFMT_COMPRESSED_RGBA_DXT1);
 //CASE_STATEMENT(PXFMT_COMPRESSED_RGBA_DXT3);
 //CASE_STATEMENT(PXFMT_COMPRESSED_RGBA_DXT5);
+
+// ETC1/ETC2 compressed texture internalformats
