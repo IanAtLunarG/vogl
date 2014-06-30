@@ -1,7 +1,6 @@
 /**************************************************************************
  *
- * Copyright 2014 LunarG, Inc.
- * All Rights Reserved.
+ * Copyright 2014 LunarG, Inc.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -325,6 +324,10 @@ enum pxfmt_sized_format
     PXFMT_COMPRESSED_RGBA_DXT1,
     PXFMT_COMPRESSED_RGBA_DXT3,
     PXFMT_COMPRESSED_RGBA_DXT5,
+
+// FXT1 compressed texture internalformats
+    PXFMT_COMPRESSED_RGB_FXT1,
+    PXFMT_COMPRESSED_RGBA_FXT1,
 };
 
 

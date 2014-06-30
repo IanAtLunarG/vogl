@@ -1,7 +1,6 @@
 /**************************************************************************
  *
- * Copyright 2014 LunarG, Inc.
- * All Rights Reserved.
+ * Copyright 2014 LunarG, Inc.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -1704,6 +1703,10 @@ void decompress(float *intermediate, const void *pSrc,
     case PXFMT_COMPRESSED_RGBA_DXT5:
         decompress_dxt(intermediate, pSrc, row_stride, x, y, fmt);
         break;
+    case PXFMT_COMPRESSED_RGB_FXT1:
+    case PXFMT_COMPRESSED_RGBA_FXT1:
+        decompress_fxt1(intermediate, pSrc, row_stride, x, y, fmt);
+        break;
     default:
         break;
     }
@@ -2334,6 +2337,10 @@ pxfmt_sized_format validate_internal_format(const GLenum internalformat)
     case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
         return PXFMT_COMPRESSED_RGBA_DXT5;
 #endif // defined(_WIN32)
+    case GL_COMPRESSED_RGBA_FXT1_3DFX:
+        return PXFMT_COMPRESSED_RGB_FXT1;
+    case GL_COMPRESSED_RGB_FXT1_3DFX:
+        return PXFMT_COMPRESSED_RGBA_FXT1;
 #if 0
     case GL_COMPRESSED_RGB8_ETC2:
         return PXFMT_COMPRESSED_RGB8_ETC2;
