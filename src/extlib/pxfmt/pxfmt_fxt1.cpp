@@ -26,6 +26,14 @@
  *
  **************************************************************************/
 
+#if defined(_WIN32)
+#include <windows.h>
+#endif
+
+// FIXME: NEED ALL OF THESE HEADERS?
+#include <algorithm> // For std::max()
+#include <assert.h>
+
 #include <GL/gl.h>
 #include <GL/glext.h>
 #include "pxfmt.h"
@@ -366,10 +374,10 @@ void decompress_fxt1(float *intermediate, const void *pSrc,
     switch (fmt)
     {
     case PXFMT_COMPRESSED_RGB_FXT1:
-        fetch_rgb_fxt1(pSrc, row_stride, x, y, intermediate);
+        fetch_rgb_fxt1((const GLubyte *) pSrc, row_stride, x, y, intermediate);
         break;
     case PXFMT_COMPRESSED_RGBA_FXT1:
-        fetch_rgba_fxt1(pSrc, row_stride, x, y, intermediate);
+        fetch_rgba_fxt1((const GLubyte *) pSrc, row_stride, x, y, intermediate);
         break;
     default:
         // Don't try to handle the non-FXT1 cases

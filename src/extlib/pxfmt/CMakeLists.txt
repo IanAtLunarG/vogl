@@ -13,8 +13,8 @@ set(SRC_LIST
     ${SRC_LIST}
     pxfmt.cpp
     pxfmt.h
+    pxfmt_fxt1.cpp
     pxfmt_s3tc.cpp
-    pxfmt_s3tc.h
     pxfmt_internal.h
     pxfmt_dlopen.h
     pxfmt_case_statements.inl
