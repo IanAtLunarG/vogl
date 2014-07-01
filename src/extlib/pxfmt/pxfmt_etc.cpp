@@ -876,43 +876,43 @@ void decompress_etc(float *intermediate, const void *pSrc,
 {
     switch (fmt)
     {
-    case GL_COMPRESSED_RGB8_ETC2:
+    case PXFMT_COMPRESSED_RGB8_ETC2:
         fetch_etc2_rgb8((const GLubyte *) pSrc, row_stride,
                         x, y, intermediate);
         break;
-    case GL_COMPRESSED_SRGB8_ETC2:
+    case PXFMT_COMPRESSED_SRGB8_ETC2:
         fetch_etc2_srgb8((const GLubyte *) pSrc, row_stride,
                          x, y, intermediate);
         break;
-    case GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2:
+    case PXFMT_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2:
         fetch_etc2_rgb8_punchthrough_alpha1((const GLubyte *) pSrc, row_stride,
                                             x, y, intermediate);
         break;
-    case GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2:
+    case PXFMT_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2:
         fetch_etc2_srgb8_punchthrough_alpha1((const GLubyte *) pSrc, row_stride,
                                              x, y, intermediate);
         break;
-    case GL_COMPRESSED_RGBA8_ETC2_EAC:
+    case PXFMT_COMPRESSED_RGBA8_ETC2_EAC:
         fetch_etc2_rgba8_eac((const GLubyte *) pSrc, row_stride,
                              x, y, intermediate);
         break;
-    case GL_COMPRESSED_SRGB8_ALPHA8_ETC2_EAC:
+    case PXFMT_COMPRESSED_SRGB8_ALPHA8_ETC2_EAC:
         fetch_etc2_srgb8_alpha8_eac((const GLubyte *) pSrc, row_stride,
                                     x, y, intermediate);
         break;
-    case GL_COMPRESSED_R11_EAC:
+    case PXFMT_COMPRESSED_R11_EAC:
         fetch_etc2_r11_eac((const GLubyte *) pSrc, row_stride,
                            x, y, intermediate);
         break;
-    case GL_COMPRESSED_RG11_EAC:
+    case PXFMT_COMPRESSED_RG11_EAC:
         fetch_etc2_rg11_eac((const GLubyte *) pSrc, row_stride,
                             x, y, intermediate);
         break;
-    case GL_COMPRESSED_SIGNED_R11_EAC:
+    case PXFMT_COMPRESSED_SIGNED_R11_EAC:
         fetch_etc2_signed_r11_eac((const GLubyte *) pSrc, row_stride,
                                   x, y, intermediate);
         break;
-    case GL_COMPRESSED_SIGNED_RG11_EAC:
+    case PXFMT_COMPRESSED_SIGNED_RG11_EAC:
         fetch_etc2_signed_rg11_eac((const GLubyte *) pSrc, row_stride,
                                    x, y, intermediate);
         break;

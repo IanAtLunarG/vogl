@@ -41,18 +41,6 @@
 #define PORTED_FROM_MESA
 #include "pxfmt_internal.h"
 
-#if 0
-#include "glheader.h"
-#include "imports.h"
-#include "colormac.h"
-#include "image.h"
-#include "macros.h"
-#include "mipmap.h"
-#include "texcompress.h"
-#include "texcompress_fxt1.h"
-#include "texstore.h"
-#endif
-
 
 
 /***************************************************************************\
