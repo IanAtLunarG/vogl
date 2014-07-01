@@ -43,12 +43,29 @@
  * MESA_FORMAT_ETC2_SRGB8_PUNCHTHROUGH_ALPHA1
  */
 
+#if defined(_WIN32)
+#include <windows.h>
+#endif
+
+// FIXME: NEED ALL OF THESE HEADERS?
+#include <algorithm> // For std::max()
+#include <assert.h>
+
+#include <GL/gl.h>
+#include <GL/glext.h>
+#include "pxfmt.h"
+
+#define PORTED_FROM_MESA
+#include "pxfmt_internal.h"
+
+#if 0
 #include <stdbool.h>
 #include "texcompress.h"
 #include "texcompress_etc.h"
 #include "texstore.h"
 #include "macros.h"
 #include "format_unpack.h"
+#endif
 
 
 struct etc2_block {
@@ -102,13 +119,16 @@ static const int etc2_modifier_tables_non_opaque[8][4] = {
    { 0,   183, 0,  -183}
 };
 
+#if 1
 /* define etc1_parse_block and etc. */
 #define UINT8_TYPE GLubyte
 #define TAG(x) x
 #include "texcompress_etc_tmp.h"
 #undef TAG
 #undef UINT8_TYPE
+#endif
 
+#if 0
 GLboolean
 _mesa_texstore_etc1_rgb8(TEXSTORE_PARAMS)
 {
@@ -117,8 +137,10 @@ _mesa_texstore_etc1_rgb8(TEXSTORE_PARAMS)
 
    return GL_FALSE;
 }
+#endif
 
 
+#if 0
 /**
  * Decode texture data in format `MESA_FORMAT_ETC1_RGB8` to
  * `MESA_FORMAT_ABGR8888`.
@@ -150,6 +172,7 @@ _mesa_etc1_unpack_rgba8888(uint8_t *dst_row,
                         src_row, src_stride,
                         src_width, src_height);
 }
+#endif
 
 static uint8_t
 etc2_base_color1_t_mode(const uint8_t *in, GLuint index)
@@ -670,6 +693,7 @@ etc2_rgba8_fetch_texel(const struct etc2_block *block,
    etc2_alpha8_fetch_texel(block, x, y, dst);
 }
 
+#if 0
 static void
 etc2_unpack_rgb8(uint8_t *dst_row,
                  unsigned dst_stride,
@@ -1253,7 +1277,7 @@ _mesa_unpack_etc2_format(uint8_t *dst_row,
                                             src_row, src_stride,
                                             src_width, src_height);
 }
-
+#endif
 
 
 static void

@@ -3,6 +3,7 @@
  * Copyright 2014 LunarG, Inc.  All Rights Reserved.
  * Copyright (C) 1999-2007  Brian Paul   All Rights Reserved.
  * Copyright (C) 2008  VMware, Inc.  All Rights Reserved.
+ * Copyright (c) 2011 VMware, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -46,12 +47,25 @@ void decompress_fxt1(float *intermediate, const void *pSrc,
                      const pxfmt_sized_format fmt);
 
 #ifdef PORTED_FROM_MESA
-// The following macros are either copied from Mesa3D, or a new implementation
-// of a Mesa3D interface is provided here in order to provide an environment
-// similar to that found in Mesa3D.  This can help minimize changes to the
-// texture-decompression code that was ported from Mesa3D.
+// The following typedefs, macros, functions, etc., are either copied from
+// Mesa3D, or a new implementation of a Mesa3D interface is provided here in
+// order to provide an environment similar to that found in Mesa3D.  This can
+// help minimize changes to the texture-decompression code that was ported from
+// Mesa3D.
+
+/** Clamp X to [MIN,MAX] */
+#define CLAMP( X, MIN, MAX )  ( (X)<(MIN) ? (MIN) : ((X)>(MAX) ? (MAX) : (X)) )
+
+/** Minimum of two values: */
+#define MIN2( A, B )   ( (A)<(B) ? (A) : (B) )
 
 #define UBYTE_TO_FLOAT(u) ((float) (u) / (float) 255.0)
+
+/** Convert GLushort in [0,65535] to GLfloat in [0.0,1.0] */
+#define USHORT_TO_FLOAT(S)  ((GLfloat) (S) * (1.0F / 65535.0F))
+
+/** Convert GLshort in [-32768,32767] to GLfloat in [-1.0,1.0] */
+#define SHORT_TO_FLOAT(S)   ((2.0F * (S) + 1.0F) * (1.0F/65535.0F))
 
 /*
  * Color channel component order
@@ -62,6 +76,36 @@ void decompress_fxt1(float *intermediate, const void *pSrc,
 #define GCOMP 1
 #define BCOMP 2
 #define ACOMP 3
+
+typedef unsigned char uint8_t;
+typedef unsigned int uint32_t;
+
+/**
+ * Convert an 8-bit sRGB value from non-linear space to a
+ * linear RGB value in [0, 1].
+ * Implemented with a 256-entry lookup table.
+ */
+static GLfloat
+_mesa_nonlinear_to_linear(GLubyte cs8)
+{
+   static GLfloat table[256];
+   static GLboolean tableReady = GL_FALSE;
+   if (!tableReady) {
+      /* compute lookup table now */
+      GLuint i;
+      for (i = 0; i < 256; i++) {
+         const GLfloat cs = UBYTE_TO_FLOAT(i);
+         if (cs <= 0.04045) {
+            table[i] = cs / 12.92f;
+         }
+         else {
+            table[i] = (GLfloat) pow((cs + 0.055) / 1.055, 2.4);
+         }
+      }
+      tableReady = GL_TRUE;
+   }
+   return table[cs8];
+}
 
 #endif // PORTED_FROM_MESA
 
