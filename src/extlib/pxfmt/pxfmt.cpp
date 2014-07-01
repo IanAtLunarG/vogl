@@ -2347,6 +2347,24 @@ pxfmt_sized_format validate_internal_format(const GLenum internalformat)
 #if 0
     case GL_COMPRESSED_RGB8_ETC2:
         return PXFMT_COMPRESSED_RGB8_ETC2;
+    case GL_COMPRESSED_SRGB8_ETC2:
+        return PXFMT_COMPRESSED_SRGB8_ETC2;
+    case GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2:
+        return PXFMT_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2;
+    case GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2:
+        return PXFMT_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2;
+    case GL_COMPRESSED_RGBA8_ETC2_EAC:
+        return PXFMT_COMPRESSED_RGBA8_ETC2_EAC;
+    case GL_COMPRESSED_SRGB8_ALPHA8_ETC2_EAC:
+        return PXFMT_COMPRESSED_SRGB8_ALPHA8_ETC2_EAC;
+    case GL_COMPRESSED_R11_EAC:
+        return PXFMT_COMPRESSED_R11_EAC;
+    case GL_COMPRESSED_SIGNED_R11_EAC:
+        return PXFMT_COMPRESSED_SIGNED_R11_EAC;
+    case GL_COMPRESSED_RG11_EAC:
+        return PXFMT_COMPRESSED_RG11_EAC;
+    case GL_COMPRESSED_SIGNED_RG11_EAC:
+        return PXFMT_COMPRESSED_SIGNED_RG11_EAC;
 #endif
     default:
         // If we get to here, this is an unsupported compressed-texture
