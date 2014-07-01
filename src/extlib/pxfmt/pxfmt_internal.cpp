@@ -32,7 +32,7 @@
 #endif
 
 #include <algorithm> // For std::max()
-#include <tgmath.h> // For pow()
+//#include <tgmath.h> // For pow()
 #include <assert.h>
 
 #include <GL/gl.h>
