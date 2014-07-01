@@ -34,7 +34,7 @@
 #include <GL/gl.h>
 #include <GL/glext.h>
 #include "pxfmt.h"
-#include <cmath>  // For std::floor()
+#include <cmath>  // For std::floor() and pow()
 
 #ifdef DECOMPRESS_DEBUG
 #include <stdio.h>

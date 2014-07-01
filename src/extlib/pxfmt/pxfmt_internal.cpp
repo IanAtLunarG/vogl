@@ -32,12 +32,12 @@
 #endif
 
 #include <algorithm> // For std::max()
-//#include <tgmath.h> // For pow()
 #include <assert.h>
 
 #include <GL/gl.h>
 #include <GL/glext.h>
 #include "pxfmt.h"
+#include <cmath>  // For std::floor() and pow()
 
 #define PORTED_FROM_MESA
 #include "pxfmt_internal.h"
