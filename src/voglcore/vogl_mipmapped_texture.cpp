@@ -350,6 +350,7 @@ namespace vogl
         if (!pImage->crop(pImg->get_width(), pImg->get_height()))
             return false;
 
+#ifdef OLD_CODE
         for (uint32_t y = 0; y < pImg->get_height(); y++)
         {
             for (uint32_t x = 0; x < pImg->get_width(); x++)
@@ -377,6 +378,11 @@ namespace vogl
                 (*pImage)(x, y) = c;
             }
         }
+#else  // OLD_CODE
+        // Assuming that we're only converting to 32-bit RGBA
+        // (i.e. 8-bit-per-component) format-type combination:
+        VOGL_ASSERT(fmt == PIXEL_FMT_A8R8G8B8);
+#endif // OLD_CODE
 
         assign(pImage, fmt, m_orient_flags);
 
